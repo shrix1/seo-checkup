@@ -102,8 +102,10 @@ const InputField = ({ query }: { query: string }) => {
           />
         </form>
         <section className="flex gap-4 items-center">
-          {!loading ||
-            (data.length !== 0 && (
+          {loading ? (
+            <></>
+          ) : (
+            data.length !== 0 && (
               <>
                 <Badge className="underline font-medium font-mono text-base underline-offset-2">
                   {baseUrl}
@@ -116,7 +118,8 @@ const InputField = ({ query }: { query: string }) => {
                   </Badge>
                 </span>
               </>
-            ))}
+            )
+          )}
         </section>
 
         {loading ? (
