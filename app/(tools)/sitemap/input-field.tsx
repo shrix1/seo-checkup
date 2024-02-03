@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { compareUrls, getSitemapBaseUrl, removeCommonPrefix } from "@/lib/utils"
-import { XCircle } from "lucide-react"
+import { Loader, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
@@ -100,33 +100,43 @@ const InputField = ({ query }: { query: string }) => {
           />
         </form>
         <section className="flex gap-4 items-center">
-          {loading && (
-            <>
-              <Skeleton className="w-[300px] dark:bg-white/50 bg-black/50" />
-              <Skeleton className="w-[100px] dark:bg-white/50 bg-black/50" />
-            </>
-          )}
-          {data.length !== 0 && (
-            <>
-              <Badge className="underline font-medium font-mono text-base underline-offset-2">
-                {baseUrl}
-              </Badge>
-
-              <span>
-                Number of Links
-                <Badge className="underline ml-2 font-medium font-mono text-base underline-offset-2">
-                  {data.length}
+          {loading ? (
+            <div className="px-5 py-2 bg-blue-50 text-blue-600 flex justify-center items-center gap-3">
+              <Loader className="animate-spin" />
+              <h2>Loading</h2>
+            </div>
+          ) : (
+            data.length !== 0 && (
+              <>
+                <Badge className="underline font-medium font-mono text-base underline-offset-2">
+                  {baseUrl}
                 </Badge>
-              </span>
-            </>
+
+                <span>
+                  Number of Links
+                  <Badge className="underline ml-2 font-medium font-mono text-base underline-offset-2">
+                    {data.length}
+                  </Badge>
+                </span>
+              </>
+            )
           )}
         </section>
 
-        {data.length === 0 || error ? (
+        {loading ? (
+          <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center items-center gap-3">
+            <Loader className="animate-spin" />
+            Loading
+          </div>
+        ) : data.length === 0 || error ? (
           <>
-            <div className="px-10 flex items-center gap-4 py-5 text-xl bg-red-50 text-red-500 rounded-lg">
-              <XCircle />
-              Unable to Find Sitemap Links. Try Again
+            <div className="px-6 flex items-start w-[400px] gap-4 py-5 bg-red-50 text-red-500 rounded-lg">
+              <div>
+                {" "}
+                <XCircle className="mt-1" />
+              </div>
+              Unable to Find Sitemap Links or the host does not give permission
+              to acces the url. Try Again
             </div>
           </>
         ) : (
@@ -136,7 +146,7 @@ const InputField = ({ query }: { query: string }) => {
                 <Link
                   key={url}
                   href={`${baseUrl}${url}`}
-                  className="text-base hover:underline underline-offset-2 dark:hover:bg-gray-100/20 hover:dark:text-white px-2 py-1 rounded-lg"
+                  className="text-base hover:underline underline-offset-2 dark:hover:bg-gray-100/20 hover:bg-gray-200 hover:dark:text-white px-2 py-1 rounded-lg"
                 >
                   <p>{url}</p>
                 </Link>
