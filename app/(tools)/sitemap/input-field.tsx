@@ -1,7 +1,6 @@
 "use client"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 import { compareUrls, getSitemapBaseUrl, removeCommonPrefix } from "@/lib/utils"
 import { Loader, XCircle } from "lucide-react"
 import Link from "next/link"
