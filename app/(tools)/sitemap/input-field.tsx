@@ -56,6 +56,9 @@ const InputField = ({ query }: { query: string }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const { baseUrl: base, urls } = await getUrls()
+    if (urls.length === 0) {
+      setError(true)
+    }
     setBaseUrl(base)
     setData(urls)
   }
@@ -145,6 +148,7 @@ const InputField = ({ query }: { query: string }) => {
                 <Link
                   key={url}
                   href={`${baseUrl}${url}`}
+                  target="_blank"
                   className="text-base hover:underline underline-offset-2 dark:hover:bg-gray-100/20 hover:bg-gray-200 hover:dark:text-white px-2 py-1 rounded-lg"
                 >
                   <p>{url}</p>
