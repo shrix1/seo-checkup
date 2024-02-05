@@ -1,7 +1,7 @@
 import React from "react"
 import { FileImage } from "lucide-react"
 
-const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
+const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-10">
       <section className="flex justify-center flex-col items-center gap-4 mt-3">
@@ -19,4 +19,4 @@ const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
   )
 }
 
-export default Sitemap
+export default MetaData
