@@ -17,7 +17,7 @@ const InputField = ({ query }: { query: string }) => {
 
   useEffect(() => {
     const q = decodeURIComponent(query)
-    setValue(q)
+    setValue(q || "https://exemplary.ai/sitemap.xml")
   }, [query])
 
   useEffect(() => {
