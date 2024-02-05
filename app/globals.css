@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+::selection {
+  @apply bg-sky-500/50 text-white;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
