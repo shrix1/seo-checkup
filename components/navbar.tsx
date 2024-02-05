@@ -94,7 +94,7 @@ export function NavigationMenuDemo() {
                 yoursite.com/sitemap.xml.
               </ListItem>
               <ListItem
-                href="/meta-tags?q=https://exemplary.ai"
+                href="/metadeta?q=https://exemplary.ai"
                 title="Meta Data/Tags"
               >
                 Easily review all website meta tags by adding your link:

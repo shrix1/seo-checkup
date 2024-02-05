@@ -48,7 +48,6 @@ const InputField = ({ query }: { query: string }) => {
       console.log(modifiedUrls)
       return { baseUrl, urls: modifiedUrls }
     } catch (e) {
-      console.log(e)
       setloading(false)
       setError(true)
       return { baseUrl: "", urls: [] }
