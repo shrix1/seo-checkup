@@ -128,15 +128,10 @@ const InputField = ({ query }: { query: string }) => {
             <Loader className="animate-spin" />
             Loading
           </div>
-        ) : data.length === 0 || error ? (
+        ) : data.length === 0 || error || true ? (
           <>
-            <div className="px-6 flex items-start w-[400px] gap-4 py-5 bg-red-50 text-red-500 rounded-lg">
-              <div>
-                {" "}
-                <XCircle className="mt-1" />
-              </div>
-              Unable to Find Sitemap Links or the host does not give permission
-              to acces the url. Try Again
+            <div className="px-6 flex items-center justify-center mt-4 w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
+              Try Refreshing devs
             </div>
           </>
         ) : (
