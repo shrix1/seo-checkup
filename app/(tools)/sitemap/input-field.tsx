@@ -65,14 +65,13 @@ const InputField = ({ query }: { query: string }) => {
 
   async function fetchSitemapUrl(url: string): Promise<string[]> {
     try {
-      const response = await fetch(url)
-      const xmlData = await response.text()
+      const data: any = await fetch(`/api/v1?q=${url}`)
+      const xmlData = await data.json()
 
       let locValues: string[] = []
       const parser = new DOMParser()
       const xmlDoc = parser.parseFromString(xmlData, "application/xml")
       const locNodes = xmlDoc.querySelectorAll("loc")
-
       locNodes.forEach((locNode) => {
         locValues.push(locNode.textContent as string)
       })
