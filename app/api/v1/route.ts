@@ -2,9 +2,10 @@ import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
   const value = req.url.split("q=")[1]
+  const url = decodeURIComponent(value)
 
   try {
-    const data = await fetch(value)
+    const data = await fetch(url)
 
     if (!data.ok) {
       console.error("Failed to fetch data:", data.statusText)
