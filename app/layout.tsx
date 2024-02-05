@@ -5,11 +5,11 @@ import { GeistMono } from "geist/font/mono"
 import Navbar from "@/components/navbar"
 import { ThemeProvider } from "@/components/theme"
 import Footer from "@/components/footer"
+import { constructMetadata } from "@/lib/utils"
 
-export const metadata: Metadata = {
-  title: "MayBeUseFull By Shri",
-  description: "Sitemap + Metatag checker",
-}
+export const metadata: Metadata = constructMetadata({
+  canonical: "/",
+})
 
 export default function RootLayout({
   children,

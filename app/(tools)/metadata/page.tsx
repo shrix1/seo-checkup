@@ -1,6 +1,16 @@
 import React from "react"
 import { FileImage } from "lucide-react"
 
+import type { Metadata } from "next"
+import { constructMetadata } from "@/lib/utils"
+
+export const metadata: Metadata = constructMetadata({
+  title: "Metdata Checker | MaybeUsefull",
+  description: "Easily review your metadata by adding your site link.",
+  canonical: "/metadata",
+  ogImage: "/og-dark.png",
+})
+
 const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-10">

@@ -28,3 +28,63 @@ export function getSitemapBaseUrl(sitemapUrl: string): string {
   const url = new URL(sitemapUrl)
   return `${url.protocol}//${url.hostname}`
 }
+
+export function constructMetadata({
+  title = "MayBeUseFull By Shri",
+  description = "Sitemap and Metatag checker for your website",
+  canonical = "/",
+  ogImage = "/og-light.png",
+}: {
+  title?: string
+  description?: string
+  canonical: string
+  ogImage?: string
+}) {
+  return {
+    metadataBase: new URL("https://maybeusefull.vercel.app"),
+    title,
+    description,
+    keywords: [
+      "sitemap",
+      "metadata",
+      "sitemap checker",
+      "metatag checker",
+      "sitemap generator",
+      "metatag generator",
+    ],
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: canonical,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: "OG Image",
+        },
+      ],
+    },
+    icons: {
+      icon: "/icon.png",
+    },
+    alternates: {
+      canonical,
+    },
+    authors: [
+      {
+        name: "Shriprasanna",
+        url: "https://github.com/shrix1",
+      },
+    ],
+    creator: "Shriprasanna",
+    twitter: {
+      title,
+      description,
+      creator: "@shriprasanna007",
+      site: "shri",
+      card: "summary_large_image",
+    },
+  }
+}

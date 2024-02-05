@@ -1,6 +1,15 @@
 import React from "react"
 import { AreaChart } from "lucide-react"
 import InputField from "./input-field"
+import type { Metadata } from "next"
+import { constructMetadata } from "@/lib/utils"
+
+export const metadata: Metadata = constructMetadata({
+  title: "Sitemap Link Checker | MaybeUsefull",
+  description: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
+  canonical: "/sitemap",
+  ogImage: "/og-dark.png",
+})
 
 const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
