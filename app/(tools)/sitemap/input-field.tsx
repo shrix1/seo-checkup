@@ -43,7 +43,9 @@ const InputField = ({ query }: { query: string }) => {
       const modifiedUrls = sortedUrls.map((url) =>
         removeCommonPrefix(url, baseUrl)
       )
+      setError(false)
       setloading(false)
+      console.log(modifiedUrls)
       return { baseUrl, urls: modifiedUrls }
     } catch (e) {
       console.log(e)
