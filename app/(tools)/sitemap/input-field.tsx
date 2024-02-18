@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { compareUrls, getSitemapBaseUrl, removeCommonPrefix } from "@/lib/utils"
-import { Loader, XCircle } from "lucide-react"
+import { Loader } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
@@ -45,7 +45,6 @@ const InputField = ({ query }: { query: string }) => {
       )
       setError(false)
       setloading(false)
-      console.log(modifiedUrls)
       return { baseUrl, urls: modifiedUrls }
     } catch (e) {
       setloading(false)

@@ -1,8 +1,8 @@
 import React from "react"
 import { FileImage } from "lucide-react"
-
 import type { Metadata } from "next"
 import { constructMetadata } from "@/lib/utils"
+import InputFieldMetadata from "./input-field"
 
 export const metadata: Metadata = constructMetadata({
   title: "Metdata Checker | MaybeUsefull",
@@ -24,6 +24,7 @@ const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
         <h2 className="text-center text-2xl font-semibold">
           MetaData Checker (WIP)
         </h2>
+        <InputFieldMetadata query={searchParams.q} />
       </section>
     </div>
   )
