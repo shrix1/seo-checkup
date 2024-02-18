@@ -14,6 +14,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
   const [ogImage, setOgImage] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const [url, setUrl] = useState("")
 
   useEffect(() => {
     const q = decodeURIComponent(query)
@@ -54,6 +55,8 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         .querySelector('meta[property="og:image"]')
         ?.getAttribute("content")
       setOgImage(ogImageUrl || "")
+
+      setUrl(value)
     } catch (error) {
       console.error("Error fetching metadata:", error)
       setError(true)
@@ -119,7 +122,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
               </div>
 
               <p className="text-sm text-gray-500 mt-1">
-                From {value ? new URL(value)?.hostname : value}
+                From {url ? new URL(url)?.hostname : url}
               </p>
             </div>
           </MetaDataContainer>
@@ -155,7 +158,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
               <div className="p-3">
                 <h3 className="line-clamp-1">{title}</h3>
                 <p className="text-sm text-gray-500 dark:text-black">
-                  {value ? new URL(value)?.hostname : value}
+                  {url ? new URL(url)?.hostname : url}
                 </p>
               </div>
             </div>
