@@ -1,11 +1,10 @@
 "use client"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-import React, { use, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import { Loader, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { get } from "http"
 
 const InputFieldMetadata = ({ query }: { query: string }) => {
   const router = useRouter()
@@ -23,7 +22,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
 
   useEffect(() => {
     ;(async () => {
-      fetchData()
+      await handleSubmit()
     })()
   }, [])
 
@@ -33,15 +32,10 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
     }
   }, [value])
 
-  async function fetchData() {
-    return await fetch(`/api/v1?q=${value}`)
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function handleSubmit() {
     try {
       setLoading(true)
-      const data = await fetchData()
+      const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`)
       const jsonData = await data.json()
 
       const tempDiv = document.createElement("div")
@@ -62,6 +56,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       setOgImage(ogImageUrl || "")
     } catch (error) {
       console.error("Error fetching metadata:", error)
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -70,7 +65,10 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
   return (
     <div className="w-full flex justify-center flex-col items-center">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={async (e) => {
+          e.preventDefault()
+          await handleSubmit()
+        }}
         className="w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
       >
         <Input
@@ -82,6 +80,12 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           className="text-base h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
         />
       </form>
+
+      {error && (
+        <div className="px-6 flex items-center justify-center mt-4 w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
+          Try Again
+        </div>
+      )}
 
       {loading ? (
         <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center items-center gap-3">
@@ -109,7 +113,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
                   className="rounded-xl"
                 />
 
-                <h3 className="text-xs w-[400px] rounded-md px-2 py-0.5 bg-black line-clamp-1 text-white absolute bottom-3 left-3">
+                <h3 className="text-xs max-w-[400px] rounded-md px-2 py-0.5 bg-black line-clamp-1 text-white absolute bottom-3 left-3">
                   {title}
                 </h3>
               </div>
