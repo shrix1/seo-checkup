@@ -16,7 +16,6 @@ export async function GET(req: Request) {
     }
 
     const res = await data.text()
-    console.log(res)
 
     return NextResponse.json(res)
   } catch (error) {
