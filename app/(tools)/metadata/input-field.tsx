@@ -154,7 +154,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
               </div>
               <div className="p-3">
                 <h3 className="line-clamp-1">{title}</h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-black">
                   {value ? new URL(value)?.hostname : value}
                 </p>
               </div>
@@ -172,7 +172,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
               </div>
               <div className="p-4">
                 <p className="text-sm text-green-700">{value}</p>
-                <h3 className="line-clamp-1">{title}</h3>
+                <h3 className="line-clamp-1 dark:text-black">{title}</h3>
                 <p className="text-sm text-gray-500 line-clamp-1">
                   {description}
                 </p>
