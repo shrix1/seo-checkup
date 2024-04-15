@@ -1,6 +1,7 @@
 "use client"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { postDiscordLogs } from "@/lib/discord-webhook"
 import { compareUrls, getSitemapBaseUrl, removeCommonPrefix } from "@/lib/utils"
 import { Loader } from "lucide-react"
 import Link from "next/link"
@@ -56,6 +57,7 @@ const InputField = ({ query }: { query: string }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const { baseUrl: base, urls } = await getUrls()
+    postDiscordLogs(decodeURIComponent(query), "SITEMAP")
     if (urls.length === 0) {
       setError(true)
     }

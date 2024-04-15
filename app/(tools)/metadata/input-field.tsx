@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import { Loader, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { postDiscordLogs } from "@/lib/discord-webhook"
 
 const InputFieldMetadata = ({ query }: { query: string }) => {
   const router = useRouter()
@@ -38,6 +39,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       setLoading(true)
       const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`)
       const jsonData = await data.json()
+      postDiscordLogs(decodeURIComponent(query), "METADATA")
 
       const tempDiv = document.createElement("div")
       tempDiv.innerHTML = jsonData
