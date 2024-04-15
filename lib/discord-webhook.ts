@@ -1,8 +1,6 @@
-"use server"
-
 const apiKey = {
-  id: process.env.DISCORD_LOGS_ID,
-  token: process.env.DISCORD_LOGS_TOKEN,
+  id: process.env.NEXT_PUBLIC_DISCORD_LOGS_ID,
+  token: process.env.NEXT_PUBLIC_DISCORD_LOGS_TOKEN,
 }
 const webhookApi = `https://discord.com/api/webhooks/${apiKey.id}/${apiKey.token}`
 
