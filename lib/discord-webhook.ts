@@ -29,7 +29,7 @@ export async function postDiscordLogs(
     ],
   }
 
-  process.env.NODE_ENV !== "development"
+  process.env.NODE_ENV === "development"
     ? ""
     : await fetch(webhookApi, {
         method: "POST",
