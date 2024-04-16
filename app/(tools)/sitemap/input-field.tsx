@@ -57,7 +57,7 @@ const InputField = ({ query }: { query: string }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const { baseUrl: base, urls } = await getUrls()
-    postDiscordLogs(decodeURIComponent(query), "SITEMAP")
+    await postDiscordLogs(decodeURIComponent(query), "SITEMAP")
     if (urls.length === 0) {
       setError(true)
     }

@@ -39,7 +39,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       setLoading(true)
       const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`)
       const jsonData = await data.json()
-      postDiscordLogs(decodeURIComponent(query), "METADATA")
+      await postDiscordLogs(decodeURIComponent(query), "METADATA")
 
       const tempDiv = document.createElement("div")
       tempDiv.innerHTML = jsonData
