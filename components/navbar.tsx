@@ -6,7 +6,7 @@ import { Flame, Github, Twitter } from "lucide-react"
 const Navbar = () => {
   return (
     <nav
-      className="h-[8vh] sticky top-0 text-black dark:text-white w-full px-12 border dark:border-gray-50/10 rounded-lg flex 
+      className="h-[8vh] sticky top-0 text-black dark:text-white w-full px-4 md:px-12 border dark:border-gray-50/10 rounded-lg flex 
     justify-between items-center backdrop-blur-lg bg-white/80 dark:bg-black/80"
     >
       <div className="flex items-center gap-2">
@@ -16,7 +16,9 @@ const Navbar = () => {
             SEO Checkup
           </h2>
         </Link>
-        <NavigationMenuDemo />
+        <div className="hidden md:flex">
+          <NavigationMenuDemo />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

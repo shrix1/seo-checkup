@@ -68,13 +68,13 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
   }
 
   return (
-    <div className="w-full flex justify-center flex-col items-center">
+    <div className="w-full flex justify-center flex-col items-center px-4 md:px-0 ">
       <form
         onSubmit={async (e) => {
           e.preventDefault()
           await handleSubmit()
         }}
-        className="w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
+        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
       >
         <Input
           onChange={(e) => setValue(e.target.value)}
@@ -87,7 +87,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       </form>
 
       {error && (
-        <div className="px-6 flex items-center justify-center mt-4 w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
+        <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
           Try Again
         </div>
       )}

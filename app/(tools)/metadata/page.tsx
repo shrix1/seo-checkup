@@ -13,7 +13,7 @@ export const metadata: Metadata = constructMetadata({
 
 const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
-    <div className="min-h-screen max-h-full flex items-center flex-col pb-10">
+    <div className="min-h-screen max-h-full flex items-center flex-col pb-10 px-4 md:px-0">
       <section className="flex justify-center flex-col items-center gap-4 mt-3">
         <div
           className="w-11 h-11 flex justify-center items-center rounded-lg
