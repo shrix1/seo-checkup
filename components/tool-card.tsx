@@ -16,8 +16,8 @@ const ToolCard = ({
   return (
     <Link href={link}>
       <div
-        className="border relative cursor-pointer flex flex-col group justify-between hover:bg-black/50 hover:text-white dark:hover:bg-white/20  hover:backdrop-blur-xl transition-all duration-300
-         overflow-hidden p-6 rounded-xl w-full h-full md:w-[360px] md:h-[200px] bg-background hover:shadow-md"
+        className="border relative cursor-pointer flex flex-col group justify-between hover:bg-black/50 hover:text-white dark:hover:bg-white/20 hover:backdrop-blur-xl transition-all duration-300
+         overflow-hidden p-6 rounded-xl w-full h-full md:w-[360px] md:h-[200px] bg-background shadow-xl hover:shadow-md"
       >
         <div className="z-10 relative">
           <h3 className="text-2xl font-semibold">{title}</h3>

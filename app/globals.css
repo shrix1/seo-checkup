@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 ::selection {
-  @apply bg-sky-500/50 text-white;
+  @apply bg-black/50 text-white dark:bg-white/50 dark:text-black;
 }
 
 @layer base {

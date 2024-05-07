@@ -18,7 +18,7 @@ export default function Home() {
 
   return (
     <section className="flex justify-center flex-col items-center">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"></div>
+      <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-background dark:bg-[linear-gradient(to_right,#202121,transparent_1px),linear-gradient(to_bottom,#202121,transparent_1px)]  bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"></div>
 
       <main className="flex justify-center flex-col items-center w-full h-screen md:h-[83vh]">
         <h1 className="text-4xl md:text-7xl -mt-10 font-bold text-center bg-clip-text text-transparent bg-gradient-to-br from-primary/40 via-primary to-primary/40">
