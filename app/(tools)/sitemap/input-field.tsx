@@ -102,6 +102,10 @@ const InputField = ({ query }: { query: string }) => {
             className="text-base h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
           />
         </form>
+        <p className="text-sm text-gray-500 -mt-6 mb-10">
+          check your <span className="font-medium text-black">sitemap.xml</span>{" "}
+          route naming before using this tool
+        </p>
         <section className="flex gap-4 items-center">
           {loading ? (
             <></>
