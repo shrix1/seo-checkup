@@ -131,7 +131,7 @@ const InputField = ({ query }: { query: string }) => {
         ) : data.length === 0 || error ? (
           <>
             <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
-              Try Refreshing devs
+              Try Refreshing
             </div>
           </>
         ) : (
