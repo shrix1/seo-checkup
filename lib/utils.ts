@@ -30,8 +30,8 @@ export function getSitemapBaseUrl(sitemapUrl: string): string {
 }
 
 export function constructMetadata({
-  title = "MayBeUseFull By Shri",
-  description = "Sitemap and Metatag checker for your website",
+  title = "Seo Checkup By Shri",
+  description = "Check your websites Sitemap and MetaData here",
   canonical = "/",
   ogImage = "/og-light.png",
 }: {
