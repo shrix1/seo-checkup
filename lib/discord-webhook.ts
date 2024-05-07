@@ -21,8 +21,8 @@ export async function postDiscordLogs(
           **Device**: ${isMobile() ? "Mobile" : "PC"}
           **CHECK_HERE**:${
             type === "SITEMAP"
-              ? `https://seo-checkup.vercel.app/sitemap?q=${value}`
-              : `https://seo-checkup.vercel.app/metadata?q=${value}`
+              ? `https://seocheckup.vercel.app/sitemap?q=${value}`
+              : `https://seocheckup.vercel.app/metadata?q=${value}`
           }`,
         color: type === "SITEMAP" ? 10181046 : 16776960,
       },
