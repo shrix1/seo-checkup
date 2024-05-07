@@ -8,8 +8,9 @@ Easliy review your sitemap links and metadata/og stuff easily
 
 ## TECH STACK
 
-- Stack : `NextJS13`
+- Stack : `NextJS`
 - UI : `TailwindCSS and ShadcnUI`
+- Buttons : `Syntax UI`
 - Images/svg : `Popsy`
 - Icons : `Luicde`
 - Hosting : `Vercel`
@@ -22,7 +23,7 @@ Easliy review your sitemap links and metadata/og stuff easily
 2. If you don't have pnpm run `npm install -g pnpm`
 3. run `pnpm install`
 4. run `pnpm run dev`
-5. Create, a new Branch, make code change make a PR
+5. Create, a new Branch, make code change make a PR (Contributions are welcome)
 6. HAPPY CODING!
 
 ---
