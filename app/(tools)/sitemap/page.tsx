@@ -5,7 +5,7 @@ import type { Metadata } from "next"
 import { constructMetadata } from "@/lib/utils"
 
 export const metadata: Metadata = constructMetadata({
-  title: "Sitemap Link Checker | MaybeUsefull",
+  title: "Sitemap Link Checker | SeoCheckup",
   description: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
   canonical: "/sitemap",
   ogImage: "/og-dark.png",

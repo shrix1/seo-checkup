@@ -18,7 +18,7 @@ const Footer = () => {
       </Link>
       .&nbsp; The source code is available on&nbsp;
       <Link
-        href="https://github.com/shrix1/maybeusefull"
+        href="https://github.com/shrix1/seo-checkup"
         target="_blank"
         rel="noopener noreferrer"
         className="underline underline-offset-2"

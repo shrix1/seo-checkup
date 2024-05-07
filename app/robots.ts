@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "",
     },
-    sitemap: "https://maybeusefull.vercel.app/sitemap.xml",
+    sitemap: "https://seocheckup.vercel.app/sitemap.xml",
   }
 }

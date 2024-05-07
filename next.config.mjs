@@ -3,7 +3,7 @@
 const url =
   process.env.NODE_ENV === "development"
     ? "http://localhost:3000"
-    : "https://maybeusefull.vercel.app"
+    : "https://seocheckup.vercel.app"
 
 const nextConfig = {
   images: {

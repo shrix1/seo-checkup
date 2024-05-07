@@ -13,7 +13,7 @@ const Navbar = () => {
         <Link href="/" className="flex items-center gap-2 justify-center group">
           <Flame className="group-hover:scale-125 transition-all duration-300" />
           <h2 className="font-medium text-lg group-hover:underline mt-0.5 font-mono">
-            MaybeUsefull
+            SEO Checkup
           </h2>
         </Link>
         <NavigationMenuDemo />
@@ -31,7 +31,7 @@ const Navbar = () => {
         </Link>
 
         <Link
-          href="https://github.com/shrix1/maybeusefull"
+          href="https://github.com/shrix1/seo-checkup"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -78,10 +78,10 @@ export function NavigationMenuDemo() {
                   >
                     <Flame className="h-6 w-6" />
                     <div className="mb-2 mt-4 text-lg font-medium font-mono ">
-                      MaybeUsefull
+                      SEO Checkup
                     </div>
                     <p className="text-sm leading-tight text-muted-foreground">
-                      Maybe Usefull tools for Developers
+                      SEO tools for Developers and marketers
                     </p>
                   </a>
                 </NavigationMenuLink>
@@ -101,7 +101,7 @@ export function NavigationMenuDemo() {
                 yoursite.com.
               </ListItem>
               <ListItem href="/" title="More coming soon">
-                More MaybeUsefull tools coming soon...
+                More SEO tools coming soon...
               </ListItem>
             </ul>
           </NavigationMenuContent>

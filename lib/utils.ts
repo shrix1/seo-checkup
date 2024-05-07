@@ -41,7 +41,7 @@ export function constructMetadata({
   ogImage?: string
 }) {
   return {
-    metadataBase: new URL("https://maybeusefull.vercel.app"),
+    metadataBase: new URL("https://seo-checkup.vercel.app"),
     title,
     description,
     keywords: [

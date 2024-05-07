@@ -5,7 +5,7 @@ import { constructMetadata } from "@/lib/utils"
 import InputFieldMetadata from "./input-field"
 
 export const metadata: Metadata = constructMetadata({
-  title: "Metdata Checker | MaybeUsefull",
+  title: "Metdata Checker | SeoCheckup",
   description: "Easily review your metadata by adding your site link.",
   canonical: "/metadata",
   ogImage: "/og-dark.png",
@@ -21,9 +21,7 @@ const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
         >
           <FileImage />
         </div>
-        <h2 className="text-center text-2xl font-semibold">
-          MetaData Checker (WIP)
-        </h2>
+        <h2 className="text-center text-2xl font-semibold">MetaData Checker</h2>
         <InputFieldMetadata query={searchParams.q} />
       </section>
     </div>
