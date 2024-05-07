@@ -13,29 +13,21 @@ const ToolCard = ({
   content: string
   link: string
 }) => {
-  const [hover, setHover] = React.useState(false)
-
   return (
     <Link href={link}>
       <div
-        onMouseOver={() => setHover(false)}
-        onMouseOut={() => setHover(true)}
         className="border relative cursor-pointer flex flex-col group justify-between hover:bg-black/50 hover:text-white dark:hover:bg-white/20  hover:backdrop-blur-xl transition-all duration-300
-         overflow-hidden p-6 rounded-xl w-[360px] h-[200px] bg-background hover:shadow-md"
+         overflow-hidden p-6 rounded-xl w-full h-full md:w-[360px] md:h-[200px] bg-background hover:shadow-md"
       >
         <div className="z-10 relative">
           <h3 className="text-2xl font-semibold">{title}</h3>
           <p className="text-sm mt-2 font-mono">{content}</p>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-fit z-10 relative group-hover:bg-white group-hover:text-black"
-        >
-          Try Now
-        </Button>
-
-        <Meteors number={20} hover={hover} />
+        <button className="mt-4 md:mt-0 group relative w-fit m-1 inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-lg border-b-2 border-l-2 border-r-2 border-black/70 dark:border-white/70 bg-gradient-to-tr from-black/80 to-black/50 dark:from-white/80 dark:to-white/50 px-4 py-1 text-white dark:text-black shadow-lg transition duration-100 ease-in-out active:translate-y-0.5 active:border-black/50 active:shadow-none">
+          <span className="absolute h-0 w-0 rounded-full bg-white opacity-10 transition-all duration-300 ease-out group-hover:h-32 group-hover:w-32"></span>
+          <span className="relative font-medium">Try Now</span>
+        </button>
       </div>
     </Link>
   )
