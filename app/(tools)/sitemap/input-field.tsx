@@ -137,10 +137,13 @@ const InputField = ({ query }: { query: string }) => {
           </div>
         ) : data.length === 0 || error ? (
           <>
-            <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-red-100 text-red-600 rounded-lg">
-              Its seems like the sitemap url:{" "}
-              <span className="underline font-medium">{value}</span> is not
-              exist or Try Refreshing.
+            <div className="px-3 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-3 bg-red-100 text-red-600 rounded-lg">
+              <p>
+                {" "}
+                Its seems like the sitemap url:{" "}
+                <span className="underline font-medium">{value}</span> is not
+                exist or Try Refreshing.
+              </p>
             </div>
           </>
         ) : (
