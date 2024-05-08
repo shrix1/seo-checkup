@@ -103,7 +103,10 @@ const InputField = ({ query }: { query: string }) => {
           />
         </form>
         <p className="text-sm text-gray-500 -mt-6 mb-10">
-          check your <span className="font-medium text-black">sitemap.xml</span>{" "}
+          check your{" "}
+          <span className="font-medium text-black dark:text-white">
+            sitemap.xml
+          </span>{" "}
           route naming before using this tool
         </p>
         <section className="flex gap-4 items-center">
@@ -128,14 +131,16 @@ const InputField = ({ query }: { query: string }) => {
         </section>
 
         {loading ? (
-          <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center items-center gap-3">
+          <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center rounded-lg items-center gap-3">
             <Loader className="animate-spin" />
             Loading
           </div>
         ) : data.length === 0 || error ? (
           <>
-            <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
-              Try Refreshing
+            <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-red-100 text-red-600 rounded-lg">
+              Its seems like the sitemap url:{" "}
+              <span className="underline font-medium">{value}</span> is not
+              exist or Try Refreshing.
             </div>
           </>
         ) : (
