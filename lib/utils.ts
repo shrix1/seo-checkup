@@ -51,6 +51,7 @@ export function constructMetadata({
       "metatag checker",
       "sitemap generator",
       "metatag generator",
+      "seo checkup",
     ],
     openGraph: {
       title,
