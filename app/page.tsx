@@ -1,4 +1,10 @@
 import ToolCard from "@/components/tool-card"
+import { constructMetadata } from "@/lib/utils"
+import { Metadata } from "next/types"
+
+export const metadata: Metadata = constructMetadata({
+  canonical: "/",
+})
 
 export default function Home() {
   const tools = [
