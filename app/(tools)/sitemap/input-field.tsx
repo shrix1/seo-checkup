@@ -7,6 +7,7 @@ import { Loader } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
+import { SitemapToJSX, restructureSitemap, sortSitemapStructure } from "./generate-deep-routes"
 
 const InputField = ({ query }: { query: string }) => {
   const router = useRouter()
@@ -15,6 +16,7 @@ const InputField = ({ query }: { query: string }) => {
   const [baseUrl, setBaseUrl] = useState<string>("")
   const [loading, setloading] = useState(false)
   const [error, setError] = useState(false)
+  const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<Array<string | { [key: string]: string | any[] }>>([])
 
   useEffect(() => {
     const q = decodeURIComponent(query)
@@ -35,10 +37,12 @@ const InputField = ({ query }: { query: string }) => {
     })()
   }, [])
 
-  async function getUrls(): Promise<{ baseUrl: string; urls: string[] }> {
+  async function getUrls(): Promise<{ baseUrl: string; urls: string[] , sitemapWithDeepRoutes: Array<string | { [key: string]: string | any[] }>}> {
     try {
       setloading(true)
       const data = await fetchSitemapUrl(query)
+      const sitemapWithDeepRoutes = restructureSitemap(data)
+      const sortedSitemapDeepRoutes = sortSitemapStructure(sitemapWithDeepRoutes)
       const sortedUrls = data.sort(compareUrls)
       const baseUrl = getSitemapBaseUrl(query)
       const modifiedUrls = sortedUrls.map((url) =>
@@ -46,21 +50,23 @@ const InputField = ({ query }: { query: string }) => {
       )
       setError(false)
       setloading(false)
-      return { baseUrl, urls: modifiedUrls }
+      return { baseUrl, urls: modifiedUrls , sitemapWithDeepRoutes:sortedSitemapDeepRoutes}
     } catch (e) {
       setloading(false)
       setError(true)
-      return { baseUrl: "", urls: [] }
+      return { baseUrl: "", urls: [] , sitemapWithDeepRoutes: []}
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const { baseUrl: base, urls } = await getUrls()
+    const { baseUrl: base, urls , sitemapWithDeepRoutes : s } = await getUrls()
     await postDiscordLogs(decodeURIComponent(query), "SITEMAP")
     if (urls.length === 0) {
       setError(true)
     }
+    console.log(s)
+    setSitemapWithDeepRoutes(s)
     setBaseUrl(base)
     setData(urls)
   }
@@ -77,7 +83,6 @@ const InputField = ({ query }: { query: string }) => {
       locNodes.forEach((locNode) => {
         locValues.push(locNode.textContent as string)
       })
-
       return locValues
     } catch (error: any) {
       setError(true)
@@ -130,7 +135,7 @@ const InputField = ({ query }: { query: string }) => {
           )}
         </section>
 
-        {loading ? (
+        {/* {loading ? (
           <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center rounded-lg items-center gap-3">
             <Loader className="animate-spin" />
             Loading
@@ -149,9 +154,9 @@ const InputField = ({ query }: { query: string }) => {
         ) : (
           <>
             <div className="flex flex-wrap gap-3 max-w-5xl mt-8">
-              {data.map((url) => (
+              {data.map((url, idx) => (
                 <Link
-                  key={url}
+                  key={url + idx}
                   href={`${baseUrl}${url}`}
                   target="_blank"
                   className="text-base hover:underline underline-offset-2 dark:hover:bg-gray-100/20 hover:bg-gray-200 hover:dark:text-white px-2 py-1 rounded-lg"
@@ -161,7 +166,10 @@ const InputField = ({ query }: { query: string }) => {
               ))}
             </div>
           </>
-        )}
+        )} */}
+     
+        {loading ? "" : <div className="mt-10 grid-cols-3"> <SitemapToJSX sitemap={sitemapWithDeepRoutes}/></div> }
+
       </div>
     </>
   )
