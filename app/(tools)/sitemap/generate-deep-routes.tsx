@@ -1,127 +1,120 @@
-export function sortSitemapStructure(sitemap:any[]) {
-  const isObject = (item:any) => typeof item === 'object' && item !== null && !Array.isArray(item);
-  const strings = sitemap.filter(item => typeof item === 'string');
-  const objects = sitemap.filter(isObject);
-  strings.sort((a, b) => a.localeCompare(b));
-  return [...strings, ...objects];
+export function sortSitemapStructure(sitemap: any[]) {
+  const isObject = (item: any) =>
+    typeof item === "object" && item !== null && !Array.isArray(item)
+  const strings = sitemap.filter((item) => typeof item === "string")
+  const objects = sitemap.filter(isObject)
+  strings.sort((a, b) => a.localeCompare(b))
+  return [...strings, ...objects]
 }
 
-export const restructureSitemap = (links:string[]) => {
-    const result:{root?:string[]} = {};
-  
-    const addToNestedStructure = (obj:Record<string, any>, parts:string[], isLeaf:boolean) => {
-      const key = parts[0];
-      if (parts.length === 1) {
-        if (!obj[key]) obj[key] = [];
-        obj[key].push(isLeaf ? '/' : { '/': [] });
-      } else {
-        if (!obj[key]) obj[key] = [];
-        let target = obj[key].find((item:any) => typeof item === 'object' && Object.keys(item)[0] === parts[1]);
-        if (!target) {
-          target = { [parts[1]]: [] };
-          obj[key].push(target);
-        }
-        addToNestedStructure(target, parts.slice(1), isLeaf);
+export const restructureSitemap = (links: string[]) => {
+  const result: { root?: string[] } = {}
+
+  const addToNestedStructure = (
+    obj: Record<string, any>,
+    parts: string[],
+    isLeaf: boolean
+  ) => {
+    const key = parts[0]
+    if (parts.length === 1) {
+      if (!obj[key]) obj[key] = []
+      obj[key].push(isLeaf ? "/" : { "/": [] })
+    } else {
+      if (!obj[key]) obj[key] = []
+      let target = obj[key].find(
+        (item: any) =>
+          typeof item === "object" && Object.keys(item)[0] === parts[1]
+      )
+      if (!target) {
+        target = { [parts[1]]: [] }
+        obj[key].push(target)
       }
-    };
-  
-    links.forEach(link => {
-      const url = new URL(link);
-      const pathParts = url.pathname.split('/').filter(part => part);
-  
-      if (pathParts.length === 0) {
-        if (!result.root) result.root = [];
-        result.root.push('/');
-      } else {
-        addToNestedStructure(result, pathParts, true);
-      }
-    });
-  
-    // Convert the result object to the desired array format
-    const convertToArray =(obj: Record<string, any>): Array<string | { [key: string]: string | any[] }> => {
-      return Object.entries(obj).map(([key, value]) => {
-        if (Array.isArray(value)) {
-          if (value.length === 1 && value[0] === '/') {
-            return `/${key}`;
-          } else {
-            const nestedArray = value.map(item => {
-              if (typeof item === 'object') {
-                return convertToArray(item)[0];
-              }
-              return item;
-            });
-            return { [key]: nestedArray };
-          }
+      addToNestedStructure(target, parts.slice(1), isLeaf)
+    }
+  }
+
+  links.forEach((link) => {
+    const url = new URL(link)
+    const pathParts = url.pathname.split("/").filter((part) => part)
+
+    if (pathParts.length === 0) {
+      if (!result.root) result.root = []
+      result.root.push("/")
+    } else {
+      addToNestedStructure(result, pathParts, true)
+    }
+  })
+
+  // Convert the result object to the desired array format
+  const convertToArray = (
+    obj: Record<string, any>
+  ): Array<string | { [key: string]: string | any[] }> => {
+    return Object.entries(obj).map(([key, value]) => {
+      if (Array.isArray(value)) {
+        if (value.length === 1 && value[0] === "/") {
+          return `/${key}`
+        } else {
+          const nestedArray = value.map((item) => {
+            if (typeof item === "object") {
+              return convertToArray(item)[0]
+            }
+            return item
+          })
+          return { [key]: nestedArray }
         }
-        return { [key]: convertToArray(value) };
-      });
-    };
-  
-    return convertToArray(result);
-  };
+      }
+      return { [key]: convertToArray(value) }
+    })
+  }
 
-// export function sitemapToHtml(sitemap: Array<string | { [key: string]: string | any[] }>) {
-//     function createListItem(item: string | { [key: string]: string | any[] }):string | void {
-//       if (typeof item === 'string') {
-//         return `<li><a href="${item}">${item}</a></li>`;
-//       } else if (typeof item === 'object') {
-//         const [key, value] = Object.entries(item)[0];
-//         return `
-//           <li>
-//             <details>
-//               <summary>${key}</summary>
-//               <ul>
-//               ${Array.isArray(value) ? value.map(createListItem).join('') : ''}
-//               </ul>
-//             </details>
-//           </li>
-//         `;
-//       }
-//     }
-  
-//     return `
-//       <ul style="display:grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap:20px;">
-//         ${sitemap.map(createListItem).join('')}
-//       </ul>
-//     `;
-//   }
+  return convertToArray(result)
+}
 
-import React from 'react';
+import React from "react"
 
-type SitemapItem = string | { [key: string]: string | SitemapItem[] };
+type SitemapItem = string | { [key: string]: string | SitemapItem[] }
 
-export function SitemapToJSX({ sitemap }: { sitemap: SitemapItem[] }): JSX.Element {
+export function SitemapToJSX({
+  sitemap,
+  baseUrl,
+}: {
+  sitemap: SitemapItem[]
+  baseUrl: string
+}): JSX.Element {
   const createListItem = (item: SitemapItem): JSX.Element => {
-    if (typeof item === 'string') {
-      return <li key={item}><a href={item}>{item}</a></li>;
-    } else if (typeof item === 'object') {
-      const [key, value] = Object.entries(item)[0];
+    if (typeof item === "string") {
+      return (
+        <li
+          key={item}
+          className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg w-fit p-1"
+        >
+          <a href={baseUrl + item}>{item}</a>
+        </li>
+      )
+    } else if (typeof item === "object") {
+      const [key, value] = Object.entries(item)[0]
       return (
         <li key={key}>
           <details>
             <summary>{key}</summary>
             <ul>
-              {Array.isArray(value) && value.map((subItem, index) => 
-                React.cloneElement(createListItem(subItem), { key: index })
-              )}
+              {Array.isArray(value) &&
+                value.map((subItem, index) =>
+                  React.cloneElement(createListItem(subItem), { key: index })
+                )}
             </ul>
           </details>
         </li>
-      );
+      )
     }
-    return <></>;
-  };
+    return <></>
+  }
 
   return (
-    <ul style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '20px'
-    }}>
-      {sitemap.map((item, index) => 
+    <ul className="grid grid-cols-1 md:grid-cols-3 gap-y-3 md:gap-x-8 md:gap-y-4">
+      {sitemap.map((item, index) =>
         React.cloneElement(createListItem(item), { key: index })
       )}
     </ul>
-  );
+  )
 }
-
