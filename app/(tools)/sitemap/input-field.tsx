@@ -7,7 +7,11 @@ import { Loader } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
-import { SitemapToJSX, restructureSitemap, sortSitemapStructure } from "./generate-deep-routes"
+import {
+  SitemapToJSX,
+  restructureSitemap,
+  sortSitemapStructure,
+} from "./generate-deep-routes"
 
 const InputField = ({ query }: { query: string }) => {
   const router = useRouter()
@@ -16,7 +20,9 @@ const InputField = ({ query }: { query: string }) => {
   const [baseUrl, setBaseUrl] = useState<string>("")
   const [loading, setloading] = useState(false)
   const [error, setError] = useState(false)
-  const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<Array<string | { [key: string]: string | any[] }>>([])
+  const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<
+    Array<string | { [key: string]: string | any[] }>
+  >([])
 
   useEffect(() => {
     const q = decodeURIComponent(query)
@@ -31,18 +37,25 @@ const InputField = ({ query }: { query: string }) => {
 
   useEffect(() => {
     ;(async () => {
-      const { baseUrl: base, urls } = await getUrls()
+      const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls()
+      setSitemapWithDeepRoutes(sitemapWithDeepRoutes)
       setBaseUrl(base)
       setData(urls)
     })()
   }, [])
 
-  async function getUrls(): Promise<{ baseUrl: string; urls: string[] , sitemapWithDeepRoutes: Array<string | { [key: string]: string | any[] }>}> {
+  async function getUrls(): Promise<{
+    baseUrl: string
+    urls: string[]
+    sitemapWithDeepRoutes: Array<string | { [key: string]: string | any[] }>
+  }> {
     try {
       setloading(true)
       const data = await fetchSitemapUrl(query)
       const sitemapWithDeepRoutes = restructureSitemap(data)
-      const sortedSitemapDeepRoutes = sortSitemapStructure(sitemapWithDeepRoutes)
+      const sortedSitemapDeepRoutes = sortSitemapStructure(
+        sitemapWithDeepRoutes
+      )
       const sortedUrls = data.sort(compareUrls)
       const baseUrl = getSitemapBaseUrl(query)
       const modifiedUrls = sortedUrls.map((url) =>
@@ -50,23 +63,26 @@ const InputField = ({ query }: { query: string }) => {
       )
       setError(false)
       setloading(false)
-      return { baseUrl, urls: modifiedUrls , sitemapWithDeepRoutes:sortedSitemapDeepRoutes}
+      return {
+        baseUrl,
+        urls: modifiedUrls,
+        sitemapWithDeepRoutes: sortedSitemapDeepRoutes,
+      }
     } catch (e) {
       setloading(false)
       setError(true)
-      return { baseUrl: "", urls: [] , sitemapWithDeepRoutes: []}
+      return { baseUrl: "", urls: [], sitemapWithDeepRoutes: [] }
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const { baseUrl: base, urls , sitemapWithDeepRoutes : s } = await getUrls()
+    const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls()
     await postDiscordLogs(decodeURIComponent(query), "SITEMAP")
     if (urls.length === 0) {
       setError(true)
     }
-    console.log(s)
-    setSitemapWithDeepRoutes(s)
+    setSitemapWithDeepRoutes(sitemapWithDeepRoutes)
     setBaseUrl(base)
     setData(urls)
   }
@@ -119,7 +135,7 @@ const InputField = ({ query }: { query: string }) => {
             <></>
           ) : (
             data.length !== 0 && (
-              <>
+              <div className="flex flex-col md:flex-row gap-4 items-center">
                 <Badge className="underline font-medium font-mono text-base underline-offset-2">
                   {baseUrl}
                 </Badge>
@@ -130,12 +146,12 @@ const InputField = ({ query }: { query: string }) => {
                     {data.length}
                   </Badge>
                 </span>
-              </>
+              </div>
             )
           )}
         </section>
 
-        {/* {loading ? (
+        {loading ? (
           <div className="px-5 text-lg py-2 bg-blue-50 text-blue-600 flex justify-center rounded-lg items-center gap-3">
             <Loader className="animate-spin" />
             Loading
@@ -154,7 +170,7 @@ const InputField = ({ query }: { query: string }) => {
         ) : (
           <>
             <div className="flex flex-wrap gap-3 max-w-5xl mt-8">
-              {data.map((url, idx) => (
+              {/* {data.map((url, idx) => (
                 <Link
                   key={url + idx}
                   href={`${baseUrl}${url}`}
@@ -163,13 +179,11 @@ const InputField = ({ query }: { query: string }) => {
                 >
                   <p>{url}</p>
                 </Link>
-              ))}
+              ))} */}
+              <SitemapToJSX sitemap={sitemapWithDeepRoutes} baseUrl={baseUrl} />
             </div>
           </>
-        )} */}
-     
-        {loading ? "" : <div className="mt-10 grid-cols-3"> <SitemapToJSX sitemap={sitemapWithDeepRoutes}/></div> }
-
+        )}
       </div>
     </>
   )
