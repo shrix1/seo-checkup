@@ -99,7 +99,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         </div>
       ) : (
         <section className="grid grid-cols-1 gap-8 max-w-xl">
-          <MetaDataContainer title="google">
+          <MetaDataContainer title="Google">
             <div>
               <h3 className="text-blue-600 line-clamp-1">{title}</h3>
               <p className="text-sm text-green-700">{value}</p>
@@ -109,7 +109,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
-          <MetaDataContainer title="twitter">
+          <MetaDataContainer title="X ( aka twitter )">
             <div className="">
               <div className="relative">
                 <ImageContainer
@@ -129,7 +129,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
-          <MetaDataContainer title="slack">
+          <MetaDataContainer title="Slack">
             <div className="border-l-4 pl-2">
               <div className="py-2">
                 <p className="text-sm text-green-700">{value}</p>
@@ -148,7 +148,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
-          <MetaDataContainer title="linkedin">
+          <MetaDataContainer title="Linkedin">
             <div className="border rounded-md bg-slate-100">
               <div className="border rounded-t-md">
                 <ImageContainer
@@ -166,7 +166,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
-          <MetaDataContainer title="discord">
+          <MetaDataContainer title="Discord">
             <div className="rounded-md bg-slate-100 dark:bg-gray-700 p-4 border-l-4 border-l-gray-400 dark:border-l-gray-400">
               <h3 className="line-clamp-1 text-blue-500">{title}</h3>
               <p className="text-sm text-gray-500 dark:text-white line-clamp-3">
@@ -182,7 +182,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
-          <MetaDataContainer title="facebook">
+          <MetaDataContainer title="Facebook">
             <div className="border rounded-md bg-slate-100">
               <div className="border rounded-t-md">
                 <ImageContainer
@@ -217,7 +217,7 @@ function MetaDataContainer({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-sm capitalize font-medium text-gray-500 dark:text-white/70">
+      <h2 className="text-sm font-medium text-gray-500 dark:text-white/70">
         {title}
       </h2>
       {children}
