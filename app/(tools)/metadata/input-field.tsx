@@ -166,6 +166,22 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </MetaDataContainer>
 
+          <MetaDataContainer title="discord">
+            <div className="rounded-md bg-slate-100 dark:bg-gray-700 p-4 border-l-4 border-l-gray-400 dark:border-l-gray-400">
+              <h3 className="line-clamp-1 text-blue-500">{title}</h3>
+              <p className="text-sm text-gray-500 dark:text-white line-clamp-3">
+                {description}
+              </p>
+              <div className="border rounded-t-md mt-3">
+                <ImageContainer
+                  ogImage={ogImage}
+                  title={title}
+                  className="rounded-t-md"
+                />
+              </div>
+            </div>
+          </MetaDataContainer>
+
           <MetaDataContainer title="facebook">
             <div className="border rounded-md bg-slate-100">
               <div className="border rounded-t-md">
