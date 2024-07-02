@@ -124,11 +124,11 @@ const InputField = ({ query }: { query: string }) => {
           />
         </form>
         <p className="text-sm text-gray-500 -mt-6 mb-10">
-          check your{" "}
+          Ensure your{" "}
           <span className="font-medium text-black dark:text-white">
             sitemap.xml
           </span>{" "}
-          route naming before using this tool
+          URL is correct before using it.
         </p>
         <section className="flex gap-4 items-center">
           {loading ? (

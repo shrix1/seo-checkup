@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Loader, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { postDiscordLogs } from "@/lib/discord-webhook"
+import Link from "next/link"
 
 const InputFieldMetadata = ({ query }: { query: string }) => {
   const router = useRouter()
@@ -74,7 +75,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           e.preventDefault()
           await handleSubmit()
         }}
-        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
+        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[70px] sticky top-4 rounded-lg flex-col"
       >
         <Input
           onChange={(e) => setValue(e.target.value)}
@@ -82,8 +83,16 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           type="text"
           autoFocus
           placeholder="yoursite.com"
-          className="text-base h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
+          className="text-base min-h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
         />
+        <p className="text-sm text-gray-500 mb-10 mt-1">
+          example url:{" "}
+          <Link href="https://shrix1.vercel.app" target="_blank">
+            <span className="font-medium text-black dark:text-white">
+              https://shrix1.vercel.app
+            </span>
+          </Link>
+        </p>
       </form>
 
       {error && (
