@@ -75,7 +75,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           e.preventDefault()
           await handleSubmit()
         }}
-        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[70px] sticky top-4 rounded-lg flex-col"
+        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[70px] sticky top-2 rounded-lg flex-col"
       >
         <Input
           onChange={(e) => setValue(e.target.value)}
@@ -85,15 +85,15 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           placeholder="yoursite.com"
           className="text-base min-h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
         />
-        <p className="text-sm text-gray-500 mb-10 mt-1">
-          example url:{" "}
-          <Link href="https://shrix1.vercel.app" target="_blank">
-            <span className="font-medium text-black dark:text-white">
-              https://shrix1.vercel.app
-            </span>
-          </Link>
-        </p>
       </form>
+      <p className="text-sm text-gray-500 mb-10 -mt-8">
+        example url:{" "}
+        <Link href="https://shrix1.vercel.app" target="_blank">
+          <span className="font-medium text-black dark:text-white">
+            https://shrix1.vercel.app
+          </span>
+        </Link>
+      </p>
 
       {error && (
         <div className="px-6 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-5 bg-teal-100 text-teal-600 rounded-lg">
