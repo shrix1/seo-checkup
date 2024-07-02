@@ -10,7 +10,7 @@ const Footer = () => {
       <p>
         Build by&nbsp;
         <Link
-          href="https://github.com/shrix1"
+          href="https://dub.sh/shri"
           target="_blank"
           rel="noopener noreferrer"
           className="underline underline-offset-2"
