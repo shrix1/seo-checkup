@@ -81,14 +81,21 @@ export function SitemapToJSX({
   sitemap: SitemapItem[]
   baseUrl: string
 }): JSX.Element {
-  const createListItem = (item: SitemapItem): JSX.Element => {
+  const createListItem = (item: SitemapItem, key?: string): JSX.Element => {
+    console.log(item, key)
     if (typeof item === "string") {
       return (
         <li
           key={item}
           className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg w-fit p-1"
         >
-          <a href={baseUrl + item}>{item}</a>
+          <a
+            href={baseUrl + key === undefined ? "" : key + item}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {item}
+          </a>
         </li>
       )
     } else if (typeof item === "object") {
@@ -100,7 +107,9 @@ export function SitemapToJSX({
             <ul>
               {Array.isArray(value) &&
                 value.map((subItem, index) =>
-                  React.cloneElement(createListItem(subItem), { key: index })
+                  React.cloneElement(createListItem(subItem, key), {
+                    key: index,
+                  })
                 )}
             </ul>
           </details>
