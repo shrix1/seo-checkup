@@ -69,7 +69,6 @@ export const restructureSitemap = (links: string[]) => {
 
   return convertToArray(result)
 }
-
 import React from "react"
 
 type SitemapItem = string | { [key: string]: string | SitemapItem[] }
@@ -81,8 +80,11 @@ export function SitemapToJSX({
   sitemap: SitemapItem[]
   baseUrl: string
 }): JSX.Element {
-  const createListItem = (item: SitemapItem, key?: string): JSX.Element => {
-    console.log(item, key)
+  const createListItem = (
+    item: SitemapItem,
+    key?: string,
+    isLeaf?: boolean
+  ): JSX.Element => {
     if (typeof item === "string") {
       return (
         <li
@@ -90,7 +92,7 @@ export function SitemapToJSX({
           className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg w-fit p-1"
         >
           <a
-            href={baseUrl + key === undefined ? "" : key + item}
+            href={!isLeaf ? baseUrl + item : baseUrl + "/" + key + item}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -107,7 +109,7 @@ export function SitemapToJSX({
             <ul>
               {Array.isArray(value) &&
                 value.map((subItem, index) =>
-                  React.cloneElement(createListItem(subItem, key), {
+                  React.cloneElement(createListItem(subItem, key, true), {
                     key: index,
                   })
                 )}
