@@ -1,6 +1,6 @@
 ## Sitemap Links and Metadata/og checker (niche usecase)
 
-Easliy review your sitemap links and metadata/og stuff easily
+Easily review your sitemap links and metadata/og stuff easily
 
 <img width="1440" alt="Screenshot 2024-02-29 at 11 47 50 AM" src="https://github.com/shrix1/maybeusefull/assets/92677078/0401c4d9-d882-4a92-90b9-ace0e49d13cd">
 
