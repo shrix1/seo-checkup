@@ -1,15 +1,17 @@
-import React from "react"
-import { FileImage } from "lucide-react"
-import type { Metadata } from "next"
-import { constructMetadata } from "@/lib/utils"
-import InputFieldMetadata from "./input-field"
+import React from "react";
+import { FileImage } from "lucide-react";
+import type { Metadata } from "next";
+import { constructMetadata } from "@/lib/utils";
+import InputFieldMetadata from "./input-field";
 
 export const metadata: Metadata = constructMetadata({
   title: "Metdata Checker | SeoCheckup",
   description: "Easily review your metadata by adding your site link.",
   canonical: "/metadata",
   ogImage: "/og-dark.png",
-})
+});
+
+export const revalidate = 0;
 
 const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
@@ -25,7 +27,7 @@ const MetaData = ({ searchParams }: { searchParams: { q: string } }) => {
         <InputFieldMetadata query={searchParams.q} />
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default MetaData
+export default MetaData;

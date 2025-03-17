@@ -1,15 +1,17 @@
-import React from "react"
-import { AreaChart } from "lucide-react"
-import InputField from "./input-field"
-import type { Metadata } from "next"
-import { constructMetadata } from "@/lib/utils"
+import React from "react";
+import { AreaChart } from "lucide-react";
+import InputField from "./input-field";
+import type { Metadata } from "next";
+import { constructMetadata } from "@/lib/utils";
 
 export const metadata: Metadata = constructMetadata({
   title: "Sitemap Link Checker | SeoCheckup",
   description: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
   canonical: "/sitemap",
   ogImage: "/og-dark.png",
-})
+});
+
+export const revalidate = 0;
 
 const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
   return (
@@ -28,7 +30,7 @@ const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
 
       <InputField query={decodeURIComponent(searchParams.q)} />
     </div>
-  )
-}
+  );
+};
 
-export default Sitemap
+export default Sitemap;
