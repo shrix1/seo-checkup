@@ -1,109 +1,122 @@
-"use client"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { postDiscordLogs } from "@/lib/discord-webhook"
-import { compareUrls, getSitemapBaseUrl, removeCommonPrefix } from "@/lib/utils"
-import { Loader } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import React, { useEffect, useState } from "react"
+"use client";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { postDiscordLogs } from "@/lib/discord-webhook";
+import {
+  compareUrls,
+  getSitemapBaseUrl,
+  removeCommonPrefix,
+} from "@/lib/utils";
+import { Loader } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import {
   SitemapToJSX,
   restructureSitemap,
   sortSitemapStructure,
-} from "./generate-deep-routes"
+} from "./generate-deep-routes";
 
 const InputField = ({ query }: { query: string }) => {
-  const router = useRouter()
-  const [value, setValue] = useState<string>("")
-  const [data, setData] = useState<string[]>([])
-  const [baseUrl, setBaseUrl] = useState<string>("")
-  const [loading, setloading] = useState(false)
-  const [error, setError] = useState(false)
+  const router = useRouter();
+  const [value, setValue] = useState<string>("");
+  const [data, setData] = useState<string[]>([]);
+  const [baseUrl, setBaseUrl] = useState<string>("");
+  const [loading, setloading] = useState(false);
+  const [error, setError] = useState(false);
   const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<
     Array<string | { [key: string]: string | any[] }>
-  >([])
+  >([]);
 
   useEffect(() => {
-    const q = decodeURIComponent(query)
-    setValue(q || "https://exemplary.ai/sitemap.xml")
-  }, [query])
+    const q = decodeURIComponent(query);
+    setValue(q || "https://exemplary.ai/sitemap.xml");
+  }, [query]);
 
   useEffect(() => {
     if (value) {
-      router.push(`/sitemap?q=${encodeURIComponent(value)}`)
+      router.push(`/sitemap?q=${encodeURIComponent(value)}`);
     }
-  }, [value])
+  }, [value]);
 
   useEffect(() => {
-    ;(async () => {
-      const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls()
-      setSitemapWithDeepRoutes(sitemapWithDeepRoutes)
-      setBaseUrl(base)
-      setData(urls)
-    })()
-  }, [])
+    (async () => {
+      const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls();
+      setSitemapWithDeepRoutes(sitemapWithDeepRoutes);
+      setBaseUrl(base);
+      setData(urls);
+    })();
+  }, []);
 
   async function getUrls(): Promise<{
-    baseUrl: string
-    urls: string[]
-    sitemapWithDeepRoutes: Array<string | { [key: string]: string | any[] }>
+    baseUrl: string;
+    urls: string[];
+    sitemapWithDeepRoutes: Array<string | { [key: string]: string | any[] }>;
   }> {
     try {
-      setloading(true)
-      const data = await fetchSitemapUrl(query)
-      const sitemapWithDeepRoutes = restructureSitemap(data)
+      setloading(true);
+      const data = await fetchSitemapUrl(query);
+      const sitemapWithDeepRoutes = restructureSitemap(data);
       const sortedSitemapDeepRoutes = sortSitemapStructure(
         sitemapWithDeepRoutes
-      )
-      const sortedUrls = data.sort(compareUrls)
-      const baseUrl = getSitemapBaseUrl(query)
+      );
+      const sortedUrls = data.sort(compareUrls);
+      const baseUrl = getSitemapBaseUrl(query);
       const modifiedUrls = sortedUrls.map((url) =>
         removeCommonPrefix(url, baseUrl)
-      )
-      setError(false)
-      setloading(false)
+      );
+      setError(false);
+      setloading(false);
       return {
         baseUrl,
         urls: modifiedUrls,
         sitemapWithDeepRoutes: sortedSitemapDeepRoutes,
-      }
+      };
     } catch (e) {
-      setloading(false)
-      setError(true)
-      return { baseUrl: "", urls: [], sitemapWithDeepRoutes: [] }
+      setloading(false);
+      setError(true);
+      return { baseUrl: "", urls: [], sitemapWithDeepRoutes: [] };
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls()
-    await postDiscordLogs(decodeURIComponent(query), "SITEMAP")
+    e.preventDefault();
+    const { baseUrl: base, urls, sitemapWithDeepRoutes } = await getUrls();
+    await postDiscordLogs(decodeURIComponent(query), "SITEMAP");
     if (urls.length === 0) {
-      setError(true)
+      setError(true);
     }
-    setSitemapWithDeepRoutes(sitemapWithDeepRoutes)
-    setBaseUrl(base)
-    setData(urls)
-  }
+    setSitemapWithDeepRoutes(sitemapWithDeepRoutes);
+    setBaseUrl(base);
+    setData(urls);
+  };
 
   async function fetchSitemapUrl(url: string): Promise<string[]> {
     try {
-      const data: any = await fetch(`/api/v1?q=${url}`)
-      const xmlData = await data.json()
+      const data: any = await fetch(`/api/v1?q=${url}`);
+      const xmlData = await data.json();
 
-      let locValues: string[] = []
-      const parser = new DOMParser()
-      const xmlDoc = parser.parseFromString(xmlData, "application/xml")
-      const locNodes = xmlDoc.querySelectorAll("loc")
+      if (xmlData.error === "Rate limit exceeded") {
+        alert(
+          "You reached the limit, try again in " +
+            xmlData.data.reset +
+            " hours or try again later"
+        );
+        return [];
+      }
+
+      let locValues: string[] = [];
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlData, "application/xml");
+      const locNodes = xmlDoc.querySelectorAll("loc");
       locNodes.forEach((locNode) => {
-        locValues.push(locNode.textContent as string)
-      })
-      return locValues
+        locValues.push(locNode.textContent as string);
+      });
+      return locValues;
     } catch (error: any) {
-      setError(true)
-      console.error("Error fetching or parsing XML:", error.message)
-      return []
+      setError(true);
+      console.error("Error fetching or parsing XML:", error.message);
+      return [];
     }
   }
 
@@ -186,7 +199,7 @@ const InputField = ({ query }: { query: string }) => {
         )}
       </div>
     </>
-  )
-}
+  );
+};
 
-export default InputField
+export default InputField;

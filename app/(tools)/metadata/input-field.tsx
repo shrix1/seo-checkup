@@ -1,70 +1,78 @@
-"use client"
-import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import React, { useEffect, useState } from "react"
-import Image from "next/image"
-import { Loader, Image as ImageIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { postDiscordLogs } from "@/lib/discord-webhook"
-import Link from "next/link"
+"use client";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import { Loader, Image as ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { postDiscordLogs } from "@/lib/discord-webhook";
+import Link from "next/link";
 
 const InputFieldMetadata = ({ query }: { query: string }) => {
-  const router = useRouter()
-  const [value, setValue] = useState("")
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [ogImage, setOgImage] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-  const [url, setUrl] = useState("")
+  const router = useRouter();
+  const [value, setValue] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [ogImage, setOgImage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [url, setUrl] = useState("");
 
   useEffect(() => {
-    const q = decodeURIComponent(query)
-    setValue(q || "https://exemplary.ai")
-  }, [query])
+    const q = decodeURIComponent(query);
+    setValue(q || "https://exemplary.ai");
+  }, [query]);
 
   useEffect(() => {
-    ;(async () => {
-      await handleSubmit()
-    })()
-  }, [])
+    (async () => {
+      await handleSubmit();
+    })();
+  }, []);
 
   useEffect(() => {
     if (value) {
-      router.push(`/metadata?q=${encodeURIComponent(value)}`)
+      router.push(`/metadata?q=${encodeURIComponent(value)}`);
     }
-  }, [value])
+  }, [value]);
 
   async function handleSubmit() {
     try {
-      setLoading(true)
-      const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`)
-      const jsonData = await data.json()
-      await postDiscordLogs(decodeURIComponent(query), "METADATA")
+      setLoading(true);
+      const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`);
+      const jsonData = await data.json();
+      if (jsonData.error === "Rate limit exceeded") {
+        alert(
+          "You reached the limit, try again in " +
+            jsonData.data.reset +
+            " hours or try again later"
+        );
+        return [];
+      }
+      await postDiscordLogs(decodeURIComponent(query), "METADATA");
 
-      const tempDiv = document.createElement("div")
-      tempDiv.innerHTML = jsonData
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = jsonData;
 
-      const title = tempDiv.querySelector("title")?.textContent
-      setTitle(title || "Untitled")
+      const title = tempDiv.querySelector("title")?.textContent;
+      setTitle(title || "Untitled");
 
       const description = tempDiv
         .querySelector('meta[name="description"]')
-        ?.getAttribute("content")
+        ?.getAttribute("content");
 
-      setDescription(description || "Untitled")
+      setDescription(description || "Untitled");
 
       const ogImageUrl = tempDiv
         .querySelector('meta[property="og:image"]')
-        ?.getAttribute("content")
-      setOgImage(ogImageUrl || "")
+        ?.getAttribute("content");
+      setOgImage(ogImageUrl || "");
 
-      setUrl(value)
+      setUrl(value);
     } catch (error) {
-      console.error("Error fetching metadata:", error)
-      setError(true)
+      console.error("Error fetching metadata:", error);
+      setError(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -72,8 +80,8 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
     <div className="w-full flex justify-center flex-col items-center px-4 md:px-0 ">
       <form
         onSubmit={async (e) => {
-          e.preventDefault()
-          await handleSubmit()
+          e.preventDefault();
+          await handleSubmit();
         }}
         className="w-full md:w-[400px] flex justify-center my-6 items-center h-[70px] sticky top-2 rounded-lg flex-col"
       >
@@ -212,17 +220,17 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         </section>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default InputFieldMetadata
+export default InputFieldMetadata;
 
 function MetaDataContainer({
   title,
   children,
 }: {
-  title: string
-  children: React.ReactNode
+  title: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -231,7 +239,7 @@ function MetaDataContainer({
       </h2>
       {children}
     </div>
-  )
+  );
 }
 
 function ImageContainer({
@@ -239,9 +247,9 @@ function ImageContainer({
   className,
   title,
 }: {
-  ogImage: string
-  className: string
-  title: string
+  ogImage: string;
+  className: string;
+  title: string;
 }) {
   return ogImage ? (
     <Image
@@ -255,5 +263,5 @@ function ImageContainer({
     <div className="w-[500px] h-[300px] bg-slate-200 grid place-items-center">
       <ImageIcon className="h-10 text-gray-400" />
     </div>
-  )
+  );
 }
