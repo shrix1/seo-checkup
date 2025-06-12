@@ -23,7 +23,7 @@ const Navbar = () => {
 
       <div className="flex items-center gap-2">
         <Link
-          href="https://twitter.com/shriprasanna007"
+          href="https://x.com/shribuilds"
           target="_blank"
           rel="noopener noreferrer"
         >

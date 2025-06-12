@@ -83,7 +83,7 @@ export function constructMetadata({
     twitter: {
       title,
       description,
-      creator: "@shriprasanna007",
+      creator: "@shribuilds",
       site: "shri",
       card: "summary_large_image",
     },
