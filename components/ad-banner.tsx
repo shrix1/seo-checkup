@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge"
 const AdBanner = () => {
   return (
     <Link
-      href="https://supwriter.com"
+      href="https://supwriter.com/?ref=seo-checkup"
       target="_blank"
       rel="noopener"
       className="block w-full bg-black dark:bg-white transition-colors py-1.5 text-center text-sm"
