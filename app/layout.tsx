@@ -6,6 +6,7 @@ import Navbar from "@/components/navbar"
 import { ThemeProvider } from "@/components/theme"
 import Footer from "@/components/footer"
 import { constructMetadata } from "@/lib/utils"
+import AdBanner from "@/components/ad-banner"
 
 export const metadata: Metadata = constructMetadata({
   canonical: "/",
@@ -29,8 +30,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="p-3 w-full sticky top-0 bg-background">
-            <Navbar />
+          <div className="sticky top-0 z-50">
+            <AdBanner />
+            <div className="p-3 w-full bg-background">
+              <Navbar />
+            </div>
           </div>
           {children}
           <Footer />

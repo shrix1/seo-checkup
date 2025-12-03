@@ -30,7 +30,7 @@ const InputField = ({ query }: { query: string }) => {
 
   useEffect(() => {
     const q = decodeURIComponent(query);
-    setValue(q || "https://exemplary.ai/sitemap.xml");
+    setValue(q || "https://supwriter.com/sitemap.xml");
   }, [query]);
 
   useEffect(() => {
@@ -99,8 +99,8 @@ const InputField = ({ query }: { query: string }) => {
       if (xmlData.error === "Rate limit exceeded") {
         alert(
           "You reached the limit, try again in " +
-            xmlData.data.reset +
-            " hours or try again later"
+          xmlData.data.reset +
+          " hours or try again later"
         );
         return [];
       }

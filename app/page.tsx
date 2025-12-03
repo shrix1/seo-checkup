@@ -12,13 +12,13 @@ export default function Home() {
       id: 1,
       title: "Sitemap Link Checker",
       content: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
-      link: "/sitemap?q=https://exemplary.ai/sitemap.xml",
+      link: "/sitemap?q=https://supwriter.com/sitemap.xml",
     },
     {
       id: 2,
       title: "Metadata viewer",
       content: "Easily review your metadata by adding your site link.",
-      link: "/metadata?q=https://exemplary.ai",
+      link: "/metadata?q=https://supwriter.com",
     },
   ]
 

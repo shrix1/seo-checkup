@@ -89,14 +89,14 @@ export function NavigationMenuDemo() {
                 </NavigationMenuLink>
               </li>
               <ListItem
-                href="/sitemap?q=https://exemplary.ai/sitemap.xml"
+                href="/sitemap?q=https://supwriter.com/sitemap.xml"
                 title="Sitemap"
               >
                 Easily review your sitemap by adding your
                 yoursite.com/sitemap.xml.
               </ListItem>
               <ListItem
-                href="/metadata?q=https://exemplary.ai"
+                href="/metadata?q=https://supwriter.com"
                 title="Meta Data/Tags"
               >
                 Easily review all website meta tags by adding your link:

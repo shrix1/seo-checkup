@@ -20,7 +20,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
 
   useEffect(() => {
     const q = decodeURIComponent(query);
-    setValue(q || "https://exemplary.ai");
+    setValue(q || "https://supwriter.com");
   }, [query]);
 
   useEffect(() => {
@@ -43,8 +43,8 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       if (jsonData.error === "Rate limit exceeded") {
         alert(
           "You reached the limit, try again in " +
-            jsonData.data.reset +
-            " hours or try again later"
+          jsonData.data.reset +
+          " hours or try again later"
         );
         return [];
       }
