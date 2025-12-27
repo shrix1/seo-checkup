@@ -9,7 +9,10 @@ export default function BuyMeCoffee() {
   useEffect(() => {
     const dismissed = localStorage.getItem("bmc-dismissed")
     if (!dismissed) {
-      setShowMessage(true)
+      const timer = setTimeout(() => {
+        setShowMessage(true)
+      }, 10000)
+      return () => clearTimeout(timer)
     }
   }, [])
 
