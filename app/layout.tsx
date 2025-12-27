@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme"
 import Footer from "@/components/footer"
 import { constructMetadata } from "@/lib/utils"
 import AdBanner from "@/components/ad-banner"
+import BuyMeCoffee from "@/components/buy-me-coffee"
 
 export const metadata: Metadata = constructMetadata({
   canonical: "/",
@@ -39,6 +40,7 @@ export default function RootLayout({
           {children}
           <Footer />
         </ThemeProvider>
+        <BuyMeCoffee />
       </body>
     </html>
   )

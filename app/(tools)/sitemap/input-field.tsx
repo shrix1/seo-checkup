@@ -37,6 +37,7 @@ const InputField = ({ query }: { query: string }) => {
     if (value) {
       router.push(`/sitemap?q=${encodeURIComponent(value)}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const InputField = ({ query }: { query: string }) => {
       setBaseUrl(base);
       setData(urls);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function getUrls(): Promise<{

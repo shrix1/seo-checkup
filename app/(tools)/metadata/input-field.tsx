@@ -27,12 +27,14 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
     (async () => {
       await handleSubmit();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (value) {
       router.push(`/metadata?q=${encodeURIComponent(value)}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   async function handleSubmit() {
