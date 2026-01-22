@@ -20,7 +20,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
 
   useEffect(() => {
     const q = decodeURIComponent(query);
-    setValue(q || "https://supwriter.com");
+    setValue(q || "https://freetoolsfr.com");
   }, [query]);
 
   useEffect(() => {

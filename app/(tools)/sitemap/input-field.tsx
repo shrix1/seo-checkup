@@ -30,7 +30,7 @@ const InputField = ({ query }: { query: string }) => {
 
   useEffect(() => {
     const q = decodeURIComponent(query);
-    setValue(q || "https://supwriter.com/sitemap.xml");
+    setValue(q || "https://freetoolsfr.com/sitemap.xml");
   }, [query]);
 
   useEffect(() => {
