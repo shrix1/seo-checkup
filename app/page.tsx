@@ -12,7 +12,7 @@ export default function Home() {
       id: 1,
       title: "Sitemap Link Checker",
       content: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
-      link: "/sitemap?q=https://supwriter.com/sitemap.xml",
+      link: "/sitemap?q=https://freetoolsfr.com/sitemap.xml",
     },
     {
       id: 2,

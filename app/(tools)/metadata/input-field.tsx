@@ -98,9 +98,9 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       </form>
       <p className="text-sm text-gray-500 mb-10 -mt-8">
         example url:{" "}
-        <Link href="https://shrix1.vercel.app" target="_blank">
+        <Link href="https://shrix1.com" target="_blank">
           <span className="font-medium text-black dark:text-white">
-            https://shrix1.vercel.app
+            https://shrix1.com
           </span>
         </Link>
       </p>

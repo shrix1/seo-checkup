@@ -89,7 +89,7 @@ export function NavigationMenuDemo() {
                 </NavigationMenuLink>
               </li>
               <ListItem
-                href="/sitemap?q=https://supwriter.com/sitemap.xml"
+                href="/sitemap?q=https://freetoolsfr.com/sitemap.xml"
                 title="Sitemap"
               >
                 Easily review your sitemap by adding your
