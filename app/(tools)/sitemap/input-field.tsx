@@ -12,6 +12,15 @@ import {
   removeCommonPrefix,
 } from "@/lib/utils"
 import { Check, Copy, Loader } from "lucide-react"
+
+type ExpandMeta = {
+  rootKind: "urlset" | "sitemapindex" | "unknown"
+  childSitemapsFetched: number
+  childSitemapsFailed: { url: string; reason: string }[]
+  truncated: boolean
+}
+
+type ExpandResult = ExpandMeta & { urls: string[] }
 import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
@@ -20,7 +29,7 @@ import {
   sortSitemapStructure,
 } from "./generate-deep-routes"
 
-const DEFAULT_SITEMAP = "https://freetoolsfr.com/sitemap.xml"
+const DEFAULT_SITEMAP = "https://supwriter.com/sitemap.xml"
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITEMAP
@@ -42,43 +51,40 @@ const InputField = ({ query }: { query: string }) => {
   const [error, setError] = useState(false)
   const [copied, setCopied] = useState(false)
   const [resultsReady, setResultsReady] = useState(false)
+  const [expandMeta, setExpandMeta] = useState<ExpandMeta | null>(null)
   const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<
     ReturnType<typeof restructureSitemap>
   >([])
   const hasFetched = useRef(false)
 
-  const fetchSitemapUrl = useCallback(async (url: string): Promise<string[]> => {
-    try {
-      const res = await fetch(`/api/v1?q=${encodeURIComponent(url)}`)
-      const xmlData = await res.json()
+  const fetchExpandedSitemap = useCallback(
+    async (url: string): Promise<ExpandResult | null> => {
+      try {
+        const res = await fetch(`/api/sitemap?q=${encodeURIComponent(url)}`)
+        const json = await res.json()
 
-      if (res.status === 429 || xmlData.error === "Rate limit exceeded") {
-        const resetMs = xmlData.reset ?? xmlData.data?.reset
-        const hours =
-          typeof resetMs === "number"
-            ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
-            : "?"
-        alert(`You reached the limit, try again in ${hours} hours or later`)
-        return []
+        if (res.status === 429 || json.error === "Rate limit exceeded") {
+          const resetMs = json.reset ?? json.data?.reset
+          const hours =
+            typeof resetMs === "number"
+              ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
+              : "?"
+          alert(`You reached the limit, try again in ${hours} hours or later`)
+          return null
+        }
+
+        if (!res.ok || !Array.isArray(json.urls)) {
+          return null
+        }
+
+        return json as ExpandResult
+      } catch (err) {
+        console.error("Error fetching expanded sitemap:", err)
+        return null
       }
-
-      if (!res.ok || typeof xmlData !== "string") {
-        return []
-      }
-
-      const locValues: string[] = []
-      const parser = new DOMParser()
-      const xmlDoc = parser.parseFromString(xmlData, "application/xml")
-      const locNodes = xmlDoc.querySelectorAll("loc")
-      locNodes.forEach((locNode) => {
-        if (locNode.textContent) locValues.push(locNode.textContent)
-      })
-      return locValues
-    } catch (err) {
-      console.error("Error fetching or parsing XML:", err)
-      return []
-    }
-  }, [])
+    },
+    []
+  )
 
   const getUrls = useCallback(
     async (target: string) => {
@@ -89,38 +95,63 @@ const InputField = ({ query }: { query: string }) => {
           urls: [],
           raw: [],
           sitemapWithDeepRoutes: [] as ReturnType<typeof restructureSitemap>,
+          meta: null,
         }
       }
       try {
         setLoading(true)
         setResultsReady(false)
-        const fetched = await fetchSitemapUrl(target)
+        const expanded = await fetchExpandedSitemap(target)
+        if (!expanded) {
+          setError(true)
+          setLoading(false)
+          setExpandMeta(null)
+          return {
+            baseUrl: "",
+            urls: [],
+            raw: [],
+            sitemapWithDeepRoutes: [],
+            meta: null,
+          }
+        }
+
+        const fetched = expanded.urls
         const deep = sortSitemapStructure(restructureSitemap(fetched))
         const sortedUrls = [...fetched].sort(compareUrls)
         const base = getSitemapBaseUrl(target)
         const modifiedUrls = sortedUrls.map((url) =>
           removeCommonPrefix(url, base)
         )
+        const meta = {
+          rootKind: expanded.rootKind,
+          childSitemapsFetched: expanded.childSitemapsFetched,
+          childSitemapsFailed: expanded.childSitemapsFailed,
+          truncated: expanded.truncated,
+        }
         setError(fetched.length === 0)
         setLoading(false)
+        setExpandMeta(meta)
         return {
           baseUrl: base,
           urls: modifiedUrls,
           raw: sortedUrls,
           sitemapWithDeepRoutes: deep,
+          meta,
         }
       } catch {
         setLoading(false)
         setError(true)
+        setExpandMeta(null)
         return {
           baseUrl: "",
           urls: [],
           raw: [],
           sitemapWithDeepRoutes: [],
+          meta: null,
         }
       }
     },
-    [fetchSitemapUrl]
+    [fetchExpandedSitemap]
   )
 
   useEffect(() => {
@@ -139,7 +170,6 @@ const InputField = ({ query }: { query: string }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     await logToolUsage(value, "SITEMAP")
-    // Same query: key won't remount — fetch in place. Different query: navigate remounts.
     if (value === initial) {
       const result = await getUrls(value)
       setSitemapWithDeepRoutes(result.sitemapWithDeepRoutes)
@@ -177,17 +207,17 @@ const InputField = ({ query }: { query: string }) => {
       <p className="text-sm text-muted-foreground -mt-6 mb-10">
         Ensure your{" "}
         <span className="font-medium text-foreground">sitemap.xml</span> URL is
-        correct before using it.
+        correct before using it. Sitemap indexes are expanded automatically.
       </p>
 
       {loading ? (
-        <div className="w-full max-w-5xl space-y-3">
+        <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3">
           <div className="flex items-center gap-2 text-sm text-blue-600">
             <Loader className="animate-spin h-4 w-4" />
-            Parsing sitemap…
+            Expanding sitemap…
           </div>
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-full max-w-md" />
+            <Skeleton key={i} className="h-8 w-full" />
           ))}
         </div>
       ) : data.length === 0 || error ? (
@@ -200,14 +230,15 @@ const InputField = ({ query }: { query: string }) => {
         </div>
       ) : (
         <FadeIn className="w-full max-w-5xl flex flex-col items-center">
-          <section className="flex flex-col md:flex-row gap-3 items-center mb-6">
+          <section className="flex flex-col md:flex-row gap-3 items-center mb-3 flex-wrap justify-center">
             <Badge className="underline font-medium font-mono text-base underline-offset-2">
               {baseUrl}
             </Badge>
             <span className="text-sm">
-              {data.length} URL{data.length === 1 ? "" : "s"} found
+              {data.length.toLocaleString()} URL
+              {data.length === 1 ? "" : "s"} found
               <Badge className="ml-2 font-medium font-mono text-base">
-                {data.length}
+                {data.length.toLocaleString()}
               </Badge>
             </span>
             <Button
@@ -225,6 +256,18 @@ const InputField = ({ query }: { query: string }) => {
               {copied ? "Copied" : "Copy all URLs"}
             </Button>
           </section>
+
+          {expandMeta && (
+            <p className="text-sm text-muted-foreground mb-6 text-center">
+              {expandMeta.rootKind === "sitemapindex"
+                ? `Expanded ${expandMeta.childSitemapsFetched} child sitemap${expandMeta.childSitemapsFetched === 1 ? "" : "s"}`
+                : "Parsed urlset sitemap"}
+              {expandMeta.childSitemapsFailed.length > 0
+                ? ` · ${expandMeta.childSitemapsFailed.length} failed`
+                : ""}
+              {expandMeta.truncated ? " · truncated at limit" : ""}
+            </p>
+          )}
 
           {resultsReady && (
             <div className="flex flex-wrap gap-3 max-w-5xl">

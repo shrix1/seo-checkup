@@ -3,37 +3,61 @@
 import Link from "next/link"
 import React from "react"
 import { Flame, Github, Twitter } from "lucide-react"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
 import { Button } from "./ui/button"
 import { ThemeSwitcher } from "./theme"
 
+const tools = [
+  {
+    label: "Sitemap",
+    href: "/sitemap?q=https://supwriter.com/sitemap.xml",
+    match: "/sitemap",
+  },
+  {
+    label: "Metadata",
+    href: "/metadata?q=https://supwriter.com",
+    match: "/metadata",
+  },
+  {
+    label: "Robots",
+    href: "/robots?q=https://supwriter.com/robots.txt",
+    match: "/robots",
+  },
+] as const
+
 const Navbar = () => {
+  const pathname = usePathname()
+
   return (
     <nav
-      className="h-[8vh] sticky top-0 text-black dark:text-white w-full px-4 md:px-12 border dark:border-gray-50/10 rounded-lg flex 
-    justify-between items-center backdrop-blur-lg bg-white/80 dark:bg-black/80"
+      className="h-[8vh] sticky top-0 text-black dark:text-white w-full px-3 sm:px-4 md:px-12 border dark:border-gray-50/10 rounded-lg flex 
+    justify-between items-center gap-2 backdrop-blur-lg bg-white/80 dark:bg-black/80"
     >
-      <div className="flex items-center gap-2">
-        <Link href="/" className="flex items-center gap-2 justify-center group">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <Link href="/" className="flex items-center gap-2 justify-center group shrink-0">
           <Flame className="group-hover:scale-125 transition-all duration-[var(--duration-normal)] ease-[var(--ease-out)]" />
-          <h2 className="font-medium text-lg group-hover:underline mt-0.5 font-mono">
+          <h2 className="font-medium text-lg group-hover:underline mt-0.5 font-mono hidden sm:block">
             SeoCheckup
           </h2>
         </Link>
-        <div className="hidden md:flex">
-          <NavigationMenuDemo />
+        <div className="flex items-center gap-1 sm:gap-3 text-sm font-medium">
+          {tools.map((tool) => (
+            <Link
+              key={tool.match}
+              href={tool.href}
+              className={cn(
+                "px-1.5 sm:px-2 py-1 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                pathname === tool.match && "underline underline-offset-4"
+              )}
+            >
+              {tool.label}
+            </Link>
+          ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Link
           href="https://x.com/shribuilds"
           target="_blank"
@@ -61,86 +85,3 @@ const Navbar = () => {
 }
 
 export default Navbar
-
-export function NavigationMenuDemo() {
-  return (
-    <NavigationMenu>
-      <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger className="text-base bg-transparent">
-            Tools
-          </NavigationMenuTrigger>
-          <NavigationMenuContent className="!border !border-gray-100/10">
-            <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-              <li className="row-span-3">
-                <NavigationMenuLink asChild>
-                  <Link
-                    className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                    href="/"
-                  >
-                    <Flame className="h-6 w-6" />
-                    <div className="mb-2 mt-4 text-lg font-medium font-mono ">
-                      SeoCheckup
-                    </div>
-                    <p className="text-sm leading-tight text-muted-foreground">
-                      SEO tools for developers and marketers
-                    </p>
-                  </Link>
-                </NavigationMenuLink>
-              </li>
-              <ListItem
-                href="/sitemap?q=https://freetoolsfr.com/sitemap.xml"
-                title="Sitemap"
-              >
-                Easily review your sitemap by adding your
-                yoursite.com/sitemap.xml.
-              </ListItem>
-              <ListItem
-                href="/metadata?q=https://supwriter.com"
-                title="Meta Data/Tags"
-              >
-                Easily review all website meta tags by adding your link:
-                yoursite.com.
-              </ListItem>
-              <ListItem
-                href="/robots?q=https://freetoolsfr.com/robots.txt"
-                title="Robots.txt"
-              >
-                Inspect robots.txt directives, sitemaps, and crawl rules.
-              </ListItem>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-      </NavigationMenuList>
-    </NavigationMenu>
-  )
-}
-
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, href, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <Link
-          ref={ref}
-          href={href || "/"}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none font-mono">
-            {title}
-          </div>
-          <p className="text-sm leading-snug text-muted-foreground ">
-            {children}
-          </p>
-        </Link>
-      </NavigationMenuLink>
-    </li>
-  )
-})
-ListItem.displayName = "ListItem"
