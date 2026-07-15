@@ -1,3 +1,5 @@
+import type { ReactElement } from "react"
+
 export function sortSitemapStructure(sitemap: any[]) {
   const isObject = (item: any) =>
     typeof item === "object" && item !== null && !Array.isArray(item)
@@ -79,12 +81,12 @@ export function SitemapToJSX({
 }: {
   sitemap: SitemapItem[]
   baseUrl: string
-}): JSX.Element {
+}): ReactElement {
   const createListItem = (
     item: SitemapItem,
     key?: string,
     isLeaf?: boolean
-  ): JSX.Element => {
+  ): ReactElement => {
     if (typeof item === "string") {
       return (
         <li
