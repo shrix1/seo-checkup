@@ -1,3 +1,4 @@
+import JsonLd from "@/components/json-ld"
 import { Button } from "@/components/ui/button"
 import {
   type BlogSlug,
@@ -5,6 +6,7 @@ import {
   blogSlugs,
   getBlogPosts,
 } from "@/lib/blog-metadata"
+import { SITE_URL, absoluteUrl } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -62,7 +64,7 @@ export default async function BlogPostPage({
   const related = getBlogPosts()
     .filter((p) => p.slug !== slug)
     .slice(0, 3)
-  const pageUrl = `https://seocheckup.vercel.app/blog/${slug}`
+  const pageUrl = absoluteUrl(`/blog/${slug}`)
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -70,9 +72,12 @@ export default async function BlogPostPage({
     description: meta.description,
     datePublished: meta.date,
     dateModified: meta.date,
-    image: `https://seocheckup.vercel.app${meta.coverImage}`,
+    image: absoluteUrl(meta.coverImage),
     url: pageUrl,
-    mainEntityOfPage: pageUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": pageUrl,
+    },
     author: {
       "@type": "Person",
       name: "Shriprasanna",
@@ -81,16 +86,13 @@ export default async function BlogPostPage({
     publisher: {
       "@type": "Organization",
       name: "SeoCheckup",
-      url: "https://seocheckup.vercel.app",
+      url: SITE_URL,
     },
   }
 
   return (
     <article className="pb-16">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
+      <JsonLd data={articleJsonLd} />
       <div
         className="w-full h-56 sm:h-72 md:h-80 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${meta.coverImage})` }}
@@ -118,6 +120,12 @@ export default async function BlogPostPage({
               <Button asChild className="mt-3 w-full">
                 <Link href={meta.relatedTool.href}>{meta.relatedTool.label}</Link>
               </Button>
+              <Link
+                href={meta.relatedLanding.href}
+                className="mt-3 block text-center text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                {meta.relatedLanding.label}
+              </Link>
             </div>
             <Link
               href="/blog"

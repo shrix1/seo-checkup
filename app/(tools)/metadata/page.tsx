@@ -5,15 +5,35 @@ import { constructMetadata } from "@/lib/utils"
 import { FadeIn } from "@/components/motion"
 import { safeDecodeURIComponent } from "@/lib/safe-decode"
 import InputFieldMetadata from "./input-field"
+import JsonLd from "@/components/json-ld"
+import ToolRelatedLinks from "@/components/tool-related-links"
+import { absoluteUrl, features } from "@/lib/site"
+
+const feature = features.metadata
 
 export const metadata: Metadata = constructMetadata({
-  title: "Metdata Checker | SeoCheckup",
-  description: "Easily review your metadata by adding your site link.",
-  canonical: "/metadata",
+  title: "Free Meta Tags Checker | SeoCheckup",
+  description: feature.description,
+  canonical: feature.toolPath,
   ogImage: "/og-dark.png",
 })
 
 export const revalidate = 0
+
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: feature.appName,
+  url: absoluteUrl(feature.toolPath),
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  description: feature.description,
+}
 
 export default async function MetaData({
   searchParams,
@@ -25,6 +45,7 @@ export default async function MetaData({
 
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-10 px-4 md:px-0">
+      <JsonLd data={appJsonLd} />
       <FadeIn>
         <section className="flex justify-center flex-col items-center gap-4 mt-3">
           <div
@@ -33,10 +54,14 @@ export default async function MetaData({
           >
             <FileImage />
           </div>
-          <h2 className="text-center text-2xl font-semibold">MetaData Checker</h2>
+          <h2 className="text-center text-2xl font-semibold">Meta Tags Checker</h2>
+          <p className="text-sm text-muted-foreground text-center max-w-md">
+            Preview title, description, and Open Graph cards before you publish.
+          </p>
         </section>
       </FadeIn>
       <InputFieldMetadata key={query || "default"} query={query} />
+      <ToolRelatedLinks feature="metadata" />
     </div>
   )
 }

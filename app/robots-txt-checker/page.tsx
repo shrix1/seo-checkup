@@ -1,12 +1,15 @@
 import SeoToolLanding from "@/components/seo-tool-landing"
+import { blogPath, features } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
+
+const feature = features.robots
 
 export const metadata: Metadata = constructMetadata({
   title: "Free Robots.txt Checker | SeoCheckup",
   description:
-    "Check and view robots.txt files. Highlight User-agent, Allow, Disallow, and Sitemap directives free.",
-  canonical: "/robots-txt-checker",
+    "Check any public robots.txt free. Highlight User-agent, Allow, Disallow, and Sitemap directives so you can confirm crawl rules and avoid blocking important pages by mistake.",
+  canonical: feature.landingPath,
 })
 
 export default function RobotsTxtCheckerPage() {
@@ -15,8 +18,10 @@ export default function RobotsTxtCheckerPage() {
       h1="Free Robots.txt Checker"
       pitch="Fetch any public robots.txt and highlight User-agent, Allow, Disallow, and Sitemap lines."
       ctaHref="/robots?q=https://shrix1.com/robots.txt"
-      canonicalPath="/robots-txt-checker"
-      appName="Robots.txt Checker"
+      canonicalPath={feature.landingPath}
+      appName={feature.appName}
+      blogHref={blogPath(feature.blogSlug)}
+      blogLabel={feature.blogLabel}
       benefits={[
         "Load robots.txt from any public site URL",
         "Highlight crawl directives so rules are easy to scan",
@@ -40,6 +45,7 @@ export default function RobotsTxtCheckerPage() {
         },
       ]}
       related={[
+        { href: "/site-audit", label: "Website SEO Audit" },
         { href: "/sitemap-checker", label: "XML Sitemap Checker" },
         { href: "/meta-tags-checker", label: "Meta Tags Checker" },
       ]}

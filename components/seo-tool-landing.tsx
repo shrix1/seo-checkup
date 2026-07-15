@@ -1,5 +1,7 @@
-import Link from "next/link"
+import JsonLd from "@/components/json-ld"
 import { Button } from "@/components/ui/button"
+import { absoluteUrl } from "@/lib/site"
+import Link from "next/link"
 
 export type SeoLandingFaq = {
   question: string
@@ -21,6 +23,8 @@ type SeoToolLandingProps = {
   related: SeoLandingRelated[]
   canonicalPath: string
   appName: string
+  blogHref: string
+  blogLabel?: string
 }
 
 export default function SeoToolLanding({
@@ -33,8 +37,10 @@ export default function SeoToolLanding({
   related,
   canonicalPath,
   appName,
+  blogHref,
+  blogLabel = "Read the guide",
 }: SeoToolLandingProps) {
-  const pageUrl = `https://seocheckup.vercel.app${canonicalPath}`
+  const pageUrl = absoluteUrl(canonicalPath)
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -83,9 +89,12 @@ export default function SeoToolLanding({
           {pitch}
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
             <Link href={ctaHref}>{ctaLabel}</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href={blogHref}>{blogLabel}</Link>
           </Button>
         </div>
 
@@ -113,11 +122,17 @@ export default function SeoToolLanding({
         </div>
 
         <nav
-          aria-label="Related tools"
+          aria-label="Related links"
           className="mt-14 pt-8 border-t flex flex-wrap gap-x-4 gap-y-2 text-sm"
         >
           <Link href="/" className="underline underline-offset-2">
             Home
+          </Link>
+          <Link
+            href={blogHref}
+            className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+          >
+            {blogLabel}
           </Link>
           {related.map((item) => (
             <Link
@@ -131,14 +146,8 @@ export default function SeoToolLanding({
         </nav>
       </main>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
-      />
+      <JsonLd data={faqJsonLd} />
+      <JsonLd data={appJsonLd} />
     </section>
   )
 }

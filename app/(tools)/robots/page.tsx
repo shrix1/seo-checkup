@@ -5,15 +5,35 @@ import { constructMetadata } from "@/lib/utils"
 import { FadeIn } from "@/components/motion"
 import { safeDecodeURIComponent } from "@/lib/safe-decode"
 import InputFieldRobots from "./input-field"
+import JsonLd from "@/components/json-ld"
+import ToolRelatedLinks from "@/components/tool-related-links"
+import { absoluteUrl, features } from "@/lib/site"
+
+const feature = features.robots
 
 export const metadata: Metadata = constructMetadata({
-  title: "Robots.txt Viewer | SeoCheckup",
-  description: "Inspect robots.txt directives, sitemaps, and crawl rules.",
-  canonical: "/robots",
+  title: "Free Robots.txt Checker | SeoCheckup",
+  description: feature.description,
+  canonical: feature.toolPath,
   ogImage: "/og-dark.png",
 })
 
 export const revalidate = 0
+
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: feature.appName,
+  url: absoluteUrl(feature.toolPath),
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  description: feature.description,
+}
 
 export default async function RobotsPage({
   searchParams,
@@ -25,6 +45,7 @@ export default async function RobotsPage({
 
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-10 px-4 md:px-0">
+      <JsonLd data={appJsonLd} />
       <FadeIn>
         <section className="flex justify-center flex-col items-center gap-4 mt-3">
           <div
@@ -36,10 +57,14 @@ export default async function RobotsPage({
           <h2 className="text-center text-2xl font-semibold">
             Robots.txt Viewer
           </h2>
+          <p className="text-sm text-muted-foreground text-center max-w-md">
+            Inspect User-agent, Allow, Disallow, and Sitemap crawl rules.
+          </p>
         </section>
       </FadeIn>
 
       <InputFieldRobots key={query || "default"} query={query} />
+      <ToolRelatedLinks feature="robots" />
     </div>
   )
 }

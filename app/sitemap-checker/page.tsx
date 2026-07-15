@@ -1,12 +1,15 @@
 import SeoToolLanding from "@/components/seo-tool-landing"
+import { blogPath, features } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
+
+const feature = features.sitemap
 
 export const metadata: Metadata = constructMetadata({
   title: "Free XML Sitemap Checker | SeoCheckup",
   description:
-    "Check and expand XML sitemaps and sitemap indexes. List every URL, filter by child sitemap, and copy results free.",
-  canonical: "/sitemap-checker",
+    "Validate and expand XML sitemaps and sitemap indexes free. Follow child sitemaps automatically, list every page URL, filter by source file, and copy the full URL list in one click.",
+  canonical: feature.landingPath,
 })
 
 export default function SitemapCheckerPage() {
@@ -15,8 +18,10 @@ export default function SitemapCheckerPage() {
       h1="Free XML Sitemap Checker"
       pitch="Expand sitemap indexes, list every page URL, then copy or filter by child sitemap."
       ctaHref="/sitemap?q=https://shrix1.com/sitemap.xml"
-      canonicalPath="/sitemap-checker"
-      appName="XML Sitemap Checker"
+      canonicalPath={feature.landingPath}
+      appName={feature.appName}
+      blogHref={blogPath(feature.blogSlug)}
+      blogLabel={feature.blogLabel}
       benefits={[
         "Follows sitemap indexes into child sitemaps automatically",
         "Filter URLs by source child sitemap when you have an index",
@@ -40,6 +45,7 @@ export default function SitemapCheckerPage() {
         },
       ]}
       related={[
+        { href: "/site-audit", label: "Website SEO Audit" },
         { href: "/meta-tags-checker", label: "Meta Tags Checker" },
         { href: "/robots-txt-checker", label: "Robots.txt Checker" },
       ]}

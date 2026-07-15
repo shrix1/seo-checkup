@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site"
 import { MetadataRoute } from "next"
 
 export default function robots(): MetadataRoute.Robots {
@@ -5,8 +6,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "",
+      disallow: ["/api/"],
     },
-    sitemap: "https://seocheckup.vercel.app/sitemap.xml",
+    host: "seocheckup.vercel.app",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

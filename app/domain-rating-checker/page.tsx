@@ -1,12 +1,15 @@
 import SeoToolLanding from "@/components/seo-tool-landing"
+import { blogPath, features } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
+
+const feature = features.domainRating
 
 export const metadata: Metadata = constructMetadata({
   title: "Free Domain Rating Checker | SeoCheckup",
   description:
-    "Check Domain Rating (DR) for any website free using Ahrefs’ public Domain Rating data. Instant authority score with attribution.",
-  canonical: "/domain-rating-checker",
+    "Check Domain Rating (DR) for any website free using Ahrefs’ public Domain Rating data. See an instant authority score with required Domain Rating by Ahrefs attribution — no API key.",
+  canonical: feature.landingPath,
 })
 
 export default function DomainRatingCheckerPage() {
@@ -16,8 +19,10 @@ export default function DomainRatingCheckerPage() {
       pitch="Look up Ahrefs Domain Rating for any domain in seconds. Free, no API key, with required Ahrefs attribution."
       ctaHref="/domain-rating?q=https://shrix1.com"
       ctaLabel="Check Domain Rating"
-      canonicalPath="/domain-rating-checker"
-      appName="Domain Rating Checker"
+      canonicalPath={feature.landingPath}
+      appName={feature.appName}
+      blogHref={blogPath(feature.blogSlug)}
+      blogLabel={feature.blogLabel}
       benefits={[
         "Instant DR score from Ahrefs’ free public endpoint",
         "Works with a bare domain or full URL",
