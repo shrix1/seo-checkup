@@ -62,9 +62,35 @@ export default async function BlogPostPage({
   const related = getBlogPosts()
     .filter((p) => p.slug !== slug)
     .slice(0, 3)
+  const pageUrl = `https://seocheckup.vercel.app/blog/${slug}`
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: meta.title,
+    description: meta.description,
+    datePublished: meta.date,
+    dateModified: meta.date,
+    image: `https://seocheckup.vercel.app${meta.coverImage}`,
+    url: pageUrl,
+    mainEntityOfPage: pageUrl,
+    author: {
+      "@type": "Person",
+      name: "Shriprasanna",
+      url: "https://github.com/shrix1",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "SeoCheckup",
+      url: "https://seocheckup.vercel.app",
+    },
+  }
 
   return (
     <article className="pb-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <div
         className="w-full h-56 sm:h-72 md:h-80 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${meta.coverImage})` }}

@@ -1,15 +1,17 @@
-/** Best-effort client IP for rate limiting on Vercel / reverse proxies. */
+/**
+ * Best-effort client IP for rate limiting.
+ * On Vercel, the leftmost X-Forwarded-For hop is the client IP set by the edge.
+ * Do not prefer client-supplied X-Real-IP over X-Forwarded-For.
+ */
 export function getClientIp(req: Request): string {
-  const realIp = req.headers.get("x-real-ip")?.trim()
-  if (realIp) return realIp
-
   const forwarded = req.headers.get("x-forwarded-for")
   if (forwarded) {
     const parts = forwarded.split(",").map((p) => p.trim()).filter(Boolean)
-    // Prefer the rightmost hop (added by the trusted edge) over client-spoofable leftmost.
-    const edgeIp = parts[parts.length - 1]
-    if (edgeIp) return edgeIp
+    if (parts[0]) return parts[0]
   }
+
+  const realIp = req.headers.get("x-real-ip")?.trim()
+  if (realIp) return realIp
 
   return "anonymous"
 }

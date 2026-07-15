@@ -30,8 +30,9 @@ export function getSitemapBaseUrl(sitemapUrl: string): string {
 }
 
 export function constructMetadata({
-  title = "Seo Checkup",
-  description = "Check your websites Sitemap and MetaData here",
+  title = "SeoCheckup — Free Site Audit & SEO Tools",
+  description =
+    "Free website SEO audit, Domain Rating checker, XML sitemap expander, meta tags preview, and robots.txt viewer.",
   canonical = "/",
   ogImage = "/og-light.png",
 }: {
@@ -45,12 +46,14 @@ export function constructMetadata({
     title,
     description,
     keywords: [
-      "sitemap",
-      "metadata",
+      "seo audit",
+      "site audit",
+      "domain rating",
+      "domain rating checker",
       "sitemap checker",
-      "metatag checker",
-      "sitemap generator",
-      "metatag generator",
+      "xml sitemap",
+      "meta tags checker",
+      "robots.txt checker",
       "seo checkup",
     ],
     openGraph: {

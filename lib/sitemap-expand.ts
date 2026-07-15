@@ -1,11 +1,17 @@
 import { gunzipSync } from "node:zlib"
+import { safeFetch } from "@/lib/safe-fetch"
 
-const MAX_DEPTH = 3
-const MAX_CHILD_SITEMAPS = 100
-const MAX_PAGE_URLS = 50_000
+const DEFAULT_MAX_DEPTH = 3
+const DEFAULT_MAX_CHILD_SITEMAPS = 100
+const DEFAULT_MAX_PAGE_URLS = 50_000
 const CONCURRENCY = 4
-const FETCH_TIMEOUT_MS = 15_000
 const MAX_BODY_BYTES = 2_000_000
+
+export type ExpandOptions = {
+  maxDepth?: number
+  maxChildSitemaps?: number
+  maxPageUrls?: number
+}
 
 export type SitemapKind = "urlset" | "sitemapindex" | "unknown"
 
@@ -92,20 +98,18 @@ export function parseSitemapXml(xml: string): ParseResult {
 }
 
 async function fetchSitemapBody(url: string): Promise<string> {
-  const res = await fetch(url, {
-    redirect: "follow",
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  const res = await safeFetch(url, {
     headers: {
       Accept: "application/xml,text/xml,application/gzip,*/*",
     },
+    maxBytes: MAX_BODY_BYTES,
   })
 
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`)
+    throw new Error(res.error || `HTTP ${res.status}`)
   }
 
-  const buffer = Buffer.from(await res.arrayBuffer())
-  const capped = buffer.subarray(0, MAX_BODY_BYTES)
+  const capped = res.body
   const encoding = (res.headers.get("content-encoding") || "").toLowerCase()
   const looksGzip =
     url.toLowerCase().endsWith(".gz") ||
@@ -114,7 +118,9 @@ async function fetchSitemapBody(url: string): Promise<string> {
 
   if (looksGzip) {
     try {
-      return gunzipSync(capped).toString("utf8")
+      return gunzipSync(capped, { maxOutputLength: MAX_BODY_BYTES }).toString(
+        "utf8"
+      )
     } catch {
       // Some servers label incorrectly; fall through to utf8 text.
     }
@@ -172,7 +178,14 @@ function collectPageUrls(
   return { urls, truncated }
 }
 
-export async function expandSitemap(rootUrl: string): Promise<ExpandResult> {
+export async function expandSitemap(
+  rootUrl: string,
+  options: ExpandOptions = {}
+): Promise<ExpandResult> {
+  const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH
+  const maxChildSitemaps = options.maxChildSitemaps ?? DEFAULT_MAX_CHILD_SITEMAPS
+  const maxPageUrls = options.maxPageUrls ?? DEFAULT_MAX_PAGE_URLS
+
   const rootParsed = new URL(rootUrl)
   if (!isHttpUrl(rootParsed)) {
     throw new Error("Only http and https URLs are allowed")
@@ -191,7 +204,7 @@ export async function expandSitemap(rootUrl: string): Promise<ExpandResult> {
   const queue: QueueItem[] = [{ url: indexUrl, depth: 0 }]
 
   while (queue.length > 0) {
-    if (pageUrls.size >= MAX_PAGE_URLS) {
+    if (pageUrls.size >= maxPageUrls) {
       truncated = true
       break
     }
@@ -245,7 +258,7 @@ export async function expandSitemap(rootUrl: string): Promise<ExpandResult> {
         const { urls: sourceUrls, truncated: hitCap } = collectPageUrls(
           parsed.locs,
           pageUrls,
-          MAX_PAGE_URLS
+          maxPageUrls
         )
         for (const u of sourceUrls) pageUrls.add(u)
         sources.push({
@@ -258,14 +271,14 @@ export async function expandSitemap(rootUrl: string): Promise<ExpandResult> {
       }
 
       if (parsed.kind === "sitemapindex") {
-        if (item.depth >= MAX_DEPTH) {
+        if (item.depth >= maxDepth) {
           truncated = true
           continue
         }
 
         let accepted = 0
         for (const loc of parsed.locs) {
-          if (visited.size + queue.length + accepted >= MAX_CHILD_SITEMAPS + 1) {
+          if (visited.size + queue.length + accepted >= maxChildSitemaps + 1) {
             truncated = true
             break
           }

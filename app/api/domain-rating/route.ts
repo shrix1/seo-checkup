@@ -4,8 +4,10 @@ import {
   fetchDomainRating,
 } from "@/lib/ahrefs-dr"
 import { getClientIp } from "@/lib/client-ip"
+import { postDiscordLogs } from "@/lib/discord-webhook"
 import { hostnameFromInput } from "@/lib/fetch-url"
 import getRatelimit from "@/lib/rate-limit"
+import { assertPublicHttpUrl } from "@/lib/safe-url"
 
 const rateLimit = getRatelimit(30, "24 h")
 
@@ -42,6 +44,7 @@ export async function GET(req: Request) {
   let domain: string
   try {
     domain = hostnameFromInput(decoded)
+    await assertPublicHttpUrl(`https://${domain}/`)
   } catch {
     return NextResponse.json({ error: "Invalid URL or domain" }, { status: 400 })
   }
@@ -57,6 +60,8 @@ export async function GET(req: Request) {
       { status: 502 }
     )
   }
+
+  void postDiscordLogs(result.domain, "DOMAIN_RATING")
 
   return NextResponse.json({
     domain: result.domain,

@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { FadeIn } from "@/components/motion"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
 import type { AuditCheck, AuditReport, CheckStatus } from "@/lib/audit/types"
-import { logToolUsage } from "@/lib/log-tool-usage"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, Copy, ExternalLink, Loader } from "lucide-react"
 import Link from "next/link"
@@ -114,7 +113,7 @@ export default function AuditClient({ query }: { query: string }) {
   const initial = useMemo(() => initialQuery(query), [query])
   const [value, setValue] = useState(initial)
   const [report, setReport] = useState<AuditReport | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({
@@ -135,12 +134,20 @@ export default function AuditClient({ query }: { query: string }) {
     try {
       const res = await fetch(`/api/audit?q=${encodeURIComponent(url.trim())}`)
       const data = await res.json()
+      if (res.status === 429 || data.error === "Rate limit exceeded") {
+        const resetMs = data.reset
+        const hours =
+          typeof resetMs === "number"
+            ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
+            : "?"
+        setError(`Rate limit exceeded. Try again in ${hours} hours.`)
+        return
+      }
       if (!res.ok) {
         setError(data.error || "Audit failed")
         return
       }
       setReport(data as AuditReport)
-      void logToolUsage(url.trim(), "AUDIT")
     } catch {
       setError("Audit failed")
     } finally {
@@ -156,9 +163,13 @@ export default function AuditClient({ query }: { query: string }) {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const next = value.trim()
+    const next = value.trim() || DEFAULT_SITE
+    if (next === initial) {
+      void run(next)
+      return
+    }
+    // Navigate only — remount via key={query} runs the audit once.
     router.push(`/audit?q=${encodeURIComponent(next)}`)
-    void run(next)
   }
 
   const copyReport = async () => {
@@ -196,8 +207,11 @@ export default function AuditClient({ query }: { query: string }) {
           className="underline underline-offset-2"
           onClick={() => {
             setValue(DEFAULT_SITE)
+            if (DEFAULT_SITE === initial) {
+              void run(DEFAULT_SITE)
+              return
+            }
             router.push(`/audit?q=${encodeURIComponent(DEFAULT_SITE)}`)
-            void run(DEFAULT_SITE)
           }}
         >
           {DEFAULT_SITE}
@@ -254,6 +268,15 @@ export default function AuditClient({ query }: { query: string }) {
                     className="underline underline-offset-2"
                   >
                     {AHREFS_DR_ATTRIBUTION.text}
+                  </Link>
+                  {" · "}
+                  <Link
+                    href={AHREFS_DR_ATTRIBUTION.license}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    License
                   </Link>
                 </p>
               )}

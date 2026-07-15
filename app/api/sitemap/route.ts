@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server"
-import getRatelimit from "@/lib/rate-limit"
+import { postDiscordLogs } from "@/lib/discord-webhook"
 import { getClientIp } from "@/lib/client-ip"
+import getRatelimit from "@/lib/rate-limit"
 import { expandSitemap } from "@/lib/sitemap-expand"
+import { assertPublicHttpUrl } from "@/lib/safe-url"
 
 const rateLimit = getRatelimit(20, "24 h")
 
 export async function GET(req: Request) {
   const ip = getClientIp(req)
-  const { success, limit, reset, remaining } = await rateLimit.limit(ip)
+  const { success, limit, reset, remaining } = await rateLimit.limit(
+    `sitemap:${ip}`
+  )
 
   if (!success) {
     return NextResponse.json(
@@ -35,22 +39,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid q parameter" }, { status: 400 })
   }
 
-  let parsed: URL
   try {
-    parsed = new URL(url)
-  } catch {
-    return NextResponse.json({ error: "Invalid URL" }, { status: 400 })
-  }
-
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    await assertPublicHttpUrl(url)
+  } catch (err) {
     return NextResponse.json(
-      { error: "Only http and https URLs are allowed" },
+      { error: err instanceof Error ? err.message : "Invalid URL" },
       { status: 400 }
     )
   }
 
   try {
-    const result = await expandSitemap(parsed.href)
+    const result = await expandSitemap(url)
+    void postDiscordLogs(url, "SITEMAP")
     return NextResponse.json(result)
   } catch (error) {
     console.error("Error expanding sitemap:", error)

@@ -12,6 +12,12 @@ const DEMO = "https://shrix1.com"
 
 const tools = [
   {
+    id: 0,
+    title: "Site Audit",
+    content: "One URL for on-page, robots, sitemap, headers, and Domain Rating.",
+    link: "/site-audit",
+  },
+  {
     id: 1,
     title: "Sitemap Link Checker",
     content: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
@@ -91,7 +97,7 @@ export default function HomeHero() {
           </p>
         </FadeIn>
 
-        <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-14 w-full max-w-5xl">
+        <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-14 w-full max-w-5xl">
           {tools.map((tool) => (
             <StaggerItem key={tool.id}>
               <ToolCard
