@@ -17,7 +17,9 @@ export default function MetaTagsCheckerPage() {
     <SeoToolLanding
       h1="Free Meta Tags Checker"
       pitch="Preview title, description, and social cards so search and share snippets look right before you publish."
-      ctaHref="/metadata?q=https://shrix1.com"
+      toolPath="/metadata"
+      defaultDemoUrl="https://shrix1.com"
+      inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
       blogHref={blogPath(feature.blogSlug)}

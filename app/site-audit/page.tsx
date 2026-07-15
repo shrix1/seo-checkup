@@ -17,8 +17,9 @@ export default function SiteAuditLandingPage() {
     <SeoToolLanding
       h1="Free Website SEO Audit"
       pitch="Paste one URL. Get a prioritized checklist across on-page SEO, robots & sitemap, and trust signals — free, with no locked details."
-      ctaHref="/audit?q=https://shrix1.com"
-      ctaLabel="Run free audit"
+      toolPath="/audit"
+      defaultDemoUrl="https://shrix1.com"
+      inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
       blogHref={blogPath(feature.blogSlug)}
