@@ -13,19 +13,19 @@ export default function Home() {
       id: 1,
       title: "Sitemap Link Checker",
       content: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
-      link: "/sitemap?q=https://shrix1.com/sitemap.xml",
+      link: "/sitemap-checker",
     },
     {
       id: 2,
       title: "Metadata viewer",
       content: "Easily review your metadata by adding your site link.",
-      link: "/metadata?q=https://shrix1.com",
+      link: "/meta-tags-checker",
     },
     {
       id: 3,
       title: "Robots.txt Viewer",
       content: "Inspect robots.txt directives, sitemaps, and crawl rules.",
-      link: "/robots?q=https://shrix1.com/robots.txt",
+      link: "/robots-txt-checker",
     },
   ]
 
