@@ -1,7 +1,19 @@
 "use client"
+
 import Link from "next/link"
 import React from "react"
 import { Flame, Github, Twitter } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu"
+import { Button } from "./ui/button"
+import { ThemeSwitcher } from "./theme"
 
 const Navbar = () => {
   return (
@@ -11,9 +23,9 @@ const Navbar = () => {
     >
       <div className="flex items-center gap-2">
         <Link href="/" className="flex items-center gap-2 justify-center group">
-          <Flame className="group-hover:scale-125 transition-all duration-300" />
+          <Flame className="group-hover:scale-125 transition-all duration-[var(--duration-normal)] ease-[var(--ease-out)]" />
           <h2 className="font-medium text-lg group-hover:underline mt-0.5 font-mono">
-            SEO Checkup
+            SeoCheckup
           </h2>
         </Link>
         <div className="hidden md:flex">
@@ -50,18 +62,6 @@ const Navbar = () => {
 
 export default Navbar
 
-import { cn } from "@/lib/utils"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { Button } from "./ui/button"
-import { ThemeSwitcher } from "./theme"
-
 export function NavigationMenuDemo() {
   return (
     <NavigationMenu>
@@ -74,18 +74,18 @@ export function NavigationMenuDemo() {
             <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
               <li className="row-span-3">
                 <NavigationMenuLink asChild>
-                  <a
+                  <Link
                     className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                     href="/"
                   >
                     <Flame className="h-6 w-6" />
                     <div className="mb-2 mt-4 text-lg font-medium font-mono ">
-                      SEO Checkup
+                      SeoCheckup
                     </div>
                     <p className="text-sm leading-tight text-muted-foreground">
-                      SEO tools for Developers and marketers
+                      SEO tools for developers and marketers
                     </p>
-                  </a>
+                  </Link>
                 </NavigationMenuLink>
               </li>
               <ListItem
@@ -102,8 +102,11 @@ export function NavigationMenuDemo() {
                 Easily review all website meta tags by adding your link:
                 yoursite.com.
               </ListItem>
-              <ListItem href="/" title="More coming soon">
-                More SEO tools coming soon...
+              <ListItem
+                href="/robots?q=https://freetoolsfr.com/robots.txt"
+                title="Robots.txt"
+              >
+                Inspect robots.txt directives, sitemaps, and crawl rules.
               </ListItem>
             </ul>
           </NavigationMenuContent>
@@ -116,12 +119,13 @@ export function NavigationMenuDemo() {
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
   React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <a
+        <Link
           ref={ref}
+          href={href || "/"}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className
@@ -134,7 +138,7 @@ const ListItem = React.forwardRef<
           <p className="text-sm leading-snug text-muted-foreground ">
             {children}
           </p>
-        </a>
+        </Link>
       </NavigationMenuLink>
     </li>
   )

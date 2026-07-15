@@ -28,6 +28,9 @@
     --input: 220 13% 91%;
     --ring: 224 71.4% 4.1%;
     --radius: 0.5rem;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
   }
 
   .dark {
@@ -50,6 +53,19 @@
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 216 12.2% 83.9%;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

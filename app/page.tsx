@@ -1,4 +1,5 @@
 import ToolCard from "@/components/tool-card"
+import { FadeIn, StaggerChildren, StaggerItem } from "@/components/motion"
 import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
 
@@ -20,28 +21,45 @@ export default function Home() {
       content: "Easily review your metadata by adding your site link.",
       link: "/metadata?q=https://supwriter.com",
     },
+    {
+      id: 3,
+      title: "Robots.txt Viewer",
+      content: "Inspect robots.txt directives, sitemaps, and crawl rules.",
+      link: "/robots?q=https://freetoolsfr.com/robots.txt",
+    },
   ]
 
   return (
-    <section className="flex justify-center flex-col items-center">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-background dark:bg-[linear-gradient(to_right,#202121,transparent_1px),linear-gradient(to_bottom,#202121,transparent_1px)]  bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"></div>
+    <section className="relative flex justify-center flex-col items-center min-h-[83vh]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-background
+          bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)]
+          bg-[size:6rem_4rem]
+          [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]"
+      />
 
-      <main className="flex justify-center flex-col items-center w-full h-[90vh] md:h-[83vh]">
-        <h1 className="text-5xl sm:text-6xl md:text-7xl -mt-10 font-bold text-center bg-clip-text text-transparent bg-gradient-to-br from-primary/40 via-primary to-primary/40">
-          Check Your Sitemap <br />
-          and Metadata here
-        </h1>
+      <main className="flex justify-center flex-col items-center w-full px-4 py-16 md:py-24">
+        <FadeIn className="flex flex-col items-center text-center max-w-2xl">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight font-mono">
+            SeoCheckup
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-md">
+            Free SEO tools to inspect sitemaps, metadata, and robots.txt.
+          </p>
+        </FadeIn>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10 px-4 md:px-0">
+        <StaggerChildren className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 w-full max-w-5xl">
           {tools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              title={tool.title}
-              content={tool.content}
-              link={tool.link}
-            />
+            <StaggerItem key={tool.id}>
+              <ToolCard
+                title={tool.title}
+                content={tool.content}
+                link={tool.link}
+              />
+            </StaggerItem>
           ))}
-        </section>
+        </StaggerChildren>
       </main>
     </section>
   )
