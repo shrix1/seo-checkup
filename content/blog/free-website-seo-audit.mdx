@@ -1,0 +1,41 @@
+# How to Run a Free Website SEO Audit
+
+A useful SEO audit does not need fifty locked cards or a sales funnel. It needs clear signals you can act on: can crawlers reach the site, can they find your URLs, and does the homepage send healthy on-page and trust signals?
+
+## What SeoCheckup checks
+
+Our [free site audit](/audit) pulls a single origin and reviews three groups:
+
+1. **On-page** — title, meta description, H1, canonical, `lang`, charset, viewport, favicon, robots meta, Open Graph, Twitter tags, and JSON-LD presence.
+2. **Robots & sitemap** — whether `robots.txt` loads, whether it declares `Sitemap:` lines, and whether an XML sitemap (or index) expands to real page URLs.
+3. **Trust & authority** — HTTPS, common security headers, and [Ahrefs Domain Rating](/domain-rating) from the free public endpoint.
+
+We intentionally skip PageSpeed / Lighthouse in this free audit. Those need separate performance APIs and often muddy a crawlability report.
+
+## How to run it
+
+1. Open the [Site Audit tool](/audit).
+2. Paste your homepage URL (or try `https://shrix1.com`).
+3. Read **Fix first** — fails and warnings sorted by severity.
+4. Expand categories for full values (nothing is paywalled).
+5. Use **Copy report** if you want to paste findings into an LLM or ticket.
+
+## How to prioritize fixes
+
+- **Fails first** — missing title, noindex on a public homepage, unreachable robots.txt, or a broken sitemap block discovery.
+- **Warnings next** — short descriptions, missing HSTS, absent JSON-LD. Useful, but rarely as urgent as crawl blockers.
+- **Deep-link tools** — jump into [Sitemap](/sitemap), [Metadata](/metadata), [Robots](/robots), or [Domain Rating](/domain-rating) for a closer look.
+
+## FAQ
+
+### Is a free audit enough for enterprise SEO?
+
+It is a strong first pass for technical hygiene. Large sites still need crawl logs, Search Console, and content quality reviews.
+
+### Will the audit crawl every page?
+
+No. It audits the homepage HTML plus robots/sitemap discovery. That is enough to catch most “site is uncrawlable” mistakes without a multi-hour crawl.
+
+### Is Domain Rating required for a good score?
+
+No. DR is one trust signal. A brand-new site can still pass on-page and crawl checks with a low DR.

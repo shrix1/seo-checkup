@@ -1,4 +1,9 @@
-export type ClientLogType = "SITEMAP" | "METADATA" | "ROBOTS"
+export type ClientLogType =
+  | "SITEMAP"
+  | "METADATA"
+  | "ROBOTS"
+  | "AUDIT"
+  | "DOMAIN_RATING"
 
 /** Client-safe helper: posts via server route so webhook secrets stay server-side. */
 export async function logToolUsage(value: string, type: ClientLogType) {

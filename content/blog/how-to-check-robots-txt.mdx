@@ -1,0 +1,36 @@
+# How to Check robots.txt (Without Breaking Crawl Access)
+
+`robots.txt` lives at the site root — `https://example.com/robots.txt`. Crawlers read it before fetching other paths. A single mistaken `Disallow: /` can hide an entire site from polite bots.
+
+## What to look for
+
+- File is reachable (HTTP 200) at the root
+- `User-agent` blocks are intentional
+- Critical assets (CSS/JS) are not blocked if you need rendering
+- `Sitemap:` lines point to real XML sitemaps
+- You understand that **Disallow ≠ noindex** — blocking fetch is not the same as removing a URL from results
+
+## Check it free
+
+Open the [Robots.txt Viewer](/robots) or the [Robots.txt Checker landing](/robots-txt-checker). Paste the robots URL and scan highlighted directives.
+
+## Safe workflow
+
+1. Review production `robots.txt` after deploys
+2. Confirm staging sites stay disallowed if that is intended
+3. Cross-check declared sitemaps with the [Sitemap Checker](/sitemap)
+4. Run a [Site Audit](/audit) if you want homepage + robots + sitemap together
+
+## FAQ
+
+### Where must robots.txt live?
+
+Only at the origin root. `/blog/robots.txt` is ignored for the whole site.
+
+### Does Disallow stop indexing?
+
+Not reliably. Crawlers may still index a URL from external links without fetching it. Use `noindex` when you need to keep a page out of results.
+
+### Is the checker free?
+
+Yes — SeoCheckup’s robots viewer is free.

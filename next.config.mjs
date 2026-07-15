@@ -1,3 +1,5 @@
+import createMDX from "@next/mdx"
+
 /** @type {import('next').NextConfig} */
 
 const url =
@@ -6,6 +8,7 @@ const url =
     : "https://seocheckup.vercel.app"
 
 const nextConfig = {
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   images: {
     remotePatterns: [
       {
@@ -35,4 +38,9 @@ const nextConfig = {
     ]
   },
 }
-export default nextConfig
+
+const withMDX = createMDX({
+  extension: /\.mdx?$/,
+})
+
+export default withMDX(nextConfig)
