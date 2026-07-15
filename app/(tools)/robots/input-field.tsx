@@ -10,7 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-const DEFAULT_ROBOTS = "https://freetoolsfr.com/robots.txt"
+const DEFAULT_ROBOTS = "https://shrix1.com/robots.txt"
 
 const DIRECTIVE =
   /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host)\s*:/i
@@ -151,9 +151,9 @@ const InputFieldRobots = ({ query }: { query: string }) => {
       </form>
       <p className="text-sm text-muted-foreground -mt-6 mb-10">
         example:{" "}
-        <Link href="https://freetoolsfr.com/robots.txt" target="_blank">
+        <Link href="https://shrix1.com/robots.txt" target="_blank">
           <span className="font-medium text-foreground">
-            https://freetoolsfr.com/robots.txt
+            https://shrix1.com/robots.txt
           </span>
         </Link>
       </p>

@@ -11,17 +11,17 @@ import { ThemeSwitcher } from "./theme"
 const tools = [
   {
     label: "Sitemap",
-    href: "/sitemap?q=https://supwriter.com/sitemap.xml",
+    href: "/sitemap?q=https://shrix1.com/sitemap.xml",
     match: "/sitemap",
   },
   {
     label: "Metadata",
-    href: "/metadata?q=https://supwriter.com",
+    href: "/metadata?q=https://shrix1.com",
     match: "/metadata",
   },
   {
     label: "Robots",
-    href: "/robots?q=https://supwriter.com/robots.txt",
+    href: "/robots?q=https://shrix1.com/robots.txt",
     match: "/robots",
   },
 ] as const

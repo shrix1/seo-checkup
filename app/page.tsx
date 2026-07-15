@@ -13,19 +13,19 @@ export default function Home() {
       id: 1,
       title: "Sitemap Link Checker",
       content: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
-      link: "/sitemap?q=https://supwriter.com/sitemap.xml",
+      link: "/sitemap?q=https://shrix1.com/sitemap.xml",
     },
     {
       id: 2,
       title: "Metadata viewer",
       content: "Easily review your metadata by adding your site link.",
-      link: "/metadata?q=https://supwriter.com",
+      link: "/metadata?q=https://shrix1.com",
     },
     {
       id: 3,
       title: "Robots.txt Viewer",
       content: "Inspect robots.txt directives, sitemaps, and crawl rules.",
-      link: "/robots?q=https://supwriter.com/robots.txt",
+      link: "/robots?q=https://shrix1.com/robots.txt",
     },
   ]
 
