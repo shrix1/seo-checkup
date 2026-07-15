@@ -1,92 +1,67 @@
 const apiKey = {
-  id: process.env.NEXT_PUBLIC_DISCORD_LOGS_ID,
-  token: process.env.NEXT_PUBLIC_DISCORD_LOGS_TOKEN,
+  id: process.env.DISCORD_LOGS_ID ?? process.env.NEXT_PUBLIC_DISCORD_LOGS_ID,
+  token:
+    process.env.DISCORD_LOGS_TOKEN ?? process.env.NEXT_PUBLIC_DISCORD_LOGS_TOKEN,
 }
 const webhookApi = `https://discord.com/api/webhooks/${apiKey.id}/${apiKey.token}`
 
-export async function postDiscordLogs(
-  value: string,
-  type: "SITEMAP" | "METADATA"
-) {
+export type LogType = "SITEMAP" | "METADATA" | "ROBOTS"
+
+const logMeta: Record<
+  LogType,
+  { emoji: string; color: number; path: string }
+> = {
+  SITEMAP: {
+    emoji: "⌘",
+    color: 10181046,
+    path: "/sitemap",
+  },
+  METADATA: {
+    emoji: "🏞️",
+    color: 16776960,
+    path: "/metadata",
+  },
+  ROBOTS: {
+    emoji: "🤖",
+    color: 5763719,
+    path: "/robots",
+  },
+}
+
+/** Server-only Discord logger. Prefer DISCORD_LOGS_* env vars (not NEXT_PUBLIC_). */
+export async function postDiscordLogs(value: string, type: LogType) {
+  if (!apiKey.id || !apiKey.token) {
+    console.warn("Discord logs skipped: missing DISCORD_LOGS_ID/TOKEN")
+    return
+  }
+
+  const meta = logMeta[type]
   const data = {
-    content: `${type === "SITEMAP" ? "⌘" : "🏞️"} ${type} - ${value}`,
+    content: `${meta.emoji} ${type} - ${value}`,
     embeds: [
       {
         title: `**${value}** - ${type}`,
         description: ` **Time**: ${new Date().toLocaleTimeString()}
         **URL**: ${value}
           **Date**: ${new Date().toLocaleDateString()} 
-          **Browser**: ${getBrowserName()}
-          **OS**: ${getOperatingSystem()}
-          **Device**: ${isMobile() ? "Mobile" : "PC"}
-          **CHECK_HERE**:${
-            type === "SITEMAP"
-              ? `https://seocheckup.vercel.app/sitemap?q=${value}`
-              : `https://seocheckup.vercel.app/metadata?q=${value}`
-          }`,
-        color: type === "SITEMAP" ? 10181046 : 16776960,
+          **CHECK_HERE**:https://seocheckup.vercel.app${meta.path}?q=${encodeURIComponent(value)}`,
+        color: meta.color,
       },
     ],
   }
 
-  process.env.NODE_ENV === "development"
-    ? ""
-    : await fetch(webhookApi, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`)
-          }
-          return response.json()
-        })
-        .then((responseData) => {
-          console.log("Message sent successfully:", responseData)
-        })
-        .catch((error) => {
-          console.error("Error sending message to Discord:", error)
-        })
-}
+  if (process.env.NODE_ENV === "development") return
 
-function getBrowserName() {
-  const userAgent =
-    (typeof window !== "undefined" && navigator.userAgent) || ([] as any)
-  if (userAgent.indexOf("Firefox") !== -1) return "Firefox"
-  if (userAgent.indexOf("Chrome") !== -1) return "Chrome"
-  if (userAgent.indexOf("Safari") !== -1) return "Safari"
-  if (userAgent.indexOf("MSIE") !== -1 || userAgent.indexOf("Trident/") !== -1)
-    return "Internet Explorer"
-  if (userAgent.indexOf("Edge") !== -1) return "Edge"
-  if (userAgent.indexOf("Opera") !== -1 || userAgent.indexOf("OPR") !== -1)
-    return "Opera"
-  return "Unknown"
-}
-
-function getOperatingSystem() {
-  const platform =
-    (typeof window !== "undefined" && navigator.platform.toLowerCase()) ||
-    ([] as any)
-
-  if (platform.includes("win")) {
-    return "Windows"
-  } else if (platform.includes("mac")) {
-    return "Mac"
-  } else if (platform.includes("linux")) {
-    return "Linux"
-  } else {
-    return "Unknown"
+  try {
+    const response = await fetch(webhookApi, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+  } catch (error) {
+    console.error("Error sending message to Discord:", error)
   }
-}
-
-function isMobile() {
-  return (
-    typeof window !== "undefined" &&
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent || (true as any)
-    )
-  )
 }
