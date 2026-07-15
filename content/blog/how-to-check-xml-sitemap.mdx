@@ -1,0 +1,41 @@
+# How to Check an XML Sitemap (Including Indexes)
+
+An XML sitemap lists the URLs you want search engines to discover. Large sites often use a **sitemap index** that points to child sitemaps instead of listing every page in one file.
+
+## What to verify
+
+- The sitemap URL returns valid XML (`urlset` or `sitemapindex`)
+- Child sitemaps in an index are reachable on the same host
+- Page URLs expand without silent truncation for your use case
+- `robots.txt` declares a `Sitemap:` line pointing at the right file
+
+## Check it free
+
+Open the [XML Sitemap Checker](/sitemap) (or the [marketing page](/sitemap-checker)) and paste your sitemap URL — for example `https://yoursite.com/sitemap.xml`.
+
+SeoCheckup expands indexes recursively (with sensible depth and size caps), shows a URL count, and lets you filter by child sitemap when you are looking at an index.
+
+## Common mistakes
+
+- Publishing only a homepage URL in the sitemap while thousands of pages exist elsewhere
+- Listing staging or `noindex` URLs you never meant to submit
+- Pointing `Sitemap:` in robots.txt at a 404
+- Mixing hosts across child sitemaps (we skip cross-host children for safety)
+
+## Next steps
+
+After the sitemap looks healthy, confirm the homepage tags with the [Meta Tags Checker](/metadata) or run a combined [Site Audit](/audit).
+
+## FAQ
+
+### Does Google require a sitemap?
+
+No, but sitemaps help discovery on large or poorly linked sites.
+
+### What is a sitemap index?
+
+An XML file whose root is `sitemapindex` and whose entries are other sitemap URLs, not page URLs.
+
+### Is the checker free?
+
+Yes — no account required for the SeoCheckup sitemap tool.

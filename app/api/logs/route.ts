@@ -3,7 +3,13 @@ import { postDiscordLogs, type LogType } from "@/lib/discord-webhook"
 import getRatelimit from "@/lib/rate-limit"
 import { getClientIp } from "@/lib/client-ip"
 
-const ALLOWED: LogType[] = ["SITEMAP", "METADATA", "ROBOTS"]
+const ALLOWED: LogType[] = [
+  "SITEMAP",
+  "METADATA",
+  "ROBOTS",
+  "AUDIT",
+  "DOMAIN_RATING",
+]
 const rateLimit = getRatelimit(40, "24 h")
 
 export async function POST(req: Request) {

@@ -5,7 +5,12 @@ const apiKey = {
 }
 const webhookApi = `https://discord.com/api/webhooks/${apiKey.id}/${apiKey.token}`
 
-export type LogType = "SITEMAP" | "METADATA" | "ROBOTS"
+export type LogType =
+  | "SITEMAP"
+  | "METADATA"
+  | "ROBOTS"
+  | "AUDIT"
+  | "DOMAIN_RATING"
 
 const logMeta: Record<
   LogType,
@@ -25,6 +30,16 @@ const logMeta: Record<
     emoji: "🤖",
     color: 5763719,
     path: "/robots",
+  },
+  AUDIT: {
+    emoji: "🩺",
+    color: 3447003,
+    path: "/audit",
+  },
+  DOMAIN_RATING: {
+    emoji: "📈",
+    color: 15844367,
+    path: "/domain-rating",
   },
 }
 

@@ -10,6 +10,16 @@ import { ThemeSwitcher } from "./theme"
 
 const tools = [
   {
+    label: "Audit",
+    href: "/audit?q=https://shrix1.com",
+    match: "/audit",
+  },
+  {
+    label: "DR",
+    href: "/domain-rating?q=https://shrix1.com",
+    match: "/domain-rating",
+  },
+  {
     label: "Sitemap",
     href: "/sitemap?q=https://shrix1.com/sitemap.xml",
     match: "/sitemap",
@@ -41,13 +51,13 @@ const Navbar = () => {
             SeoCheckup
           </h2>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-3 text-sm font-medium">
+        <div className="flex items-center gap-1 sm:gap-2 text-sm font-medium overflow-x-auto max-w-[55vw] sm:max-w-none">
           {tools.map((tool) => (
             <Link
               key={tool.match}
               href={tool.href}
               className={cn(
-                "px-1.5 sm:px-2 py-1 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                "px-1.5 sm:px-2 py-1 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap",
                 pathname === tool.match && "underline underline-offset-4"
               )}
             >
@@ -58,6 +68,15 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <Link
+          href="/blog"
+          className={cn(
+            "hidden md:inline text-sm font-medium px-2 py-1 rounded-md hover:bg-accent",
+            pathname.startsWith("/blog") && "underline underline-offset-4"
+          )}
+        >
+          Blog
+        </Link>
         <Link
           href="https://x.com/shribuilds"
           target="_blank"
