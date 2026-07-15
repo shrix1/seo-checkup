@@ -1,4 +1,5 @@
 import JsonLd from "@/components/json-ld"
+import SeoLandingCta from "@/components/seo-landing-cta"
 import { Button } from "@/components/ui/button"
 import { absoluteUrl } from "@/lib/site"
 import Link from "next/link"
@@ -16,7 +17,9 @@ export type SeoLandingRelated = {
 type SeoToolLandingProps = {
   h1: string
   pitch: string
-  ctaHref: string
+  toolPath: string
+  defaultDemoUrl: string
+  inputPlaceholder?: string
   ctaLabel?: string
   benefits: [string, string, string]
   faqs: [SeoLandingFaq, SeoLandingFaq, SeoLandingFaq]
@@ -30,8 +33,10 @@ type SeoToolLandingProps = {
 export default function SeoToolLanding({
   h1,
   pitch,
-  ctaHref,
-  ctaLabel = "Try it free",
+  toolPath,
+  defaultDemoUrl,
+  inputPlaceholder,
+  ctaLabel = "Try for free",
   benefits,
   faqs,
   related,
@@ -89,13 +94,18 @@ export default function SeoToolLanding({
           {pitch}
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link href={ctaHref}>{ctaLabel}</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href={blogHref}>{blogLabel}</Link>
-          </Button>
+        <div className="mt-8 space-y-3">
+          <SeoLandingCta
+            toolPath={toolPath}
+            defaultDemoUrl={defaultDemoUrl}
+            inputPlaceholder={inputPlaceholder}
+            buttonLabel={ctaLabel}
+          />
+          <div className="flex flex-wrap gap-3">
+            <Button asChild size="lg" variant="outline">
+              <Link href={blogHref}>{blogLabel}</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mt-14">

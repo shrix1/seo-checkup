@@ -17,8 +17,9 @@ export default function DomainRatingCheckerPage() {
     <SeoToolLanding
       h1="Free Domain Rating Checker"
       pitch="Look up Ahrefs Domain Rating for any domain in seconds. Free, no API key, with required Ahrefs attribution."
-      ctaHref="/domain-rating?q=https://shrix1.com"
-      ctaLabel="Check Domain Rating"
+      toolPath="/domain-rating"
+      defaultDemoUrl="https://shrix1.com"
+      inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
       blogHref={blogPath(feature.blogSlug)}
