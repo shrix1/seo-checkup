@@ -7,7 +7,7 @@ import { Metadata } from "next/types"
 export const metadata: Metadata = constructMetadata({
   title: "SeoCheckup — Free Site Audit & SEO Tools",
   description:
-    "Free website SEO tools: run a technical site audit, check Ahrefs Domain Rating, expand XML sitemaps, preview meta tags and Open Graph cards, and inspect robots.txt — no account required.",
+    "Free site audit for any website — check sitemap, meta tags, robots.txt, and Domain Rating in one go.",
   canonical: "/",
 })
 
@@ -17,7 +17,7 @@ const websiteJsonLd = {
   name: "SeoCheckup",
   url: SITE_URL,
   description:
-    "Free website SEO audit, Domain Rating checker, XML sitemap expander, meta tags preview, and robots.txt viewer.",
+    "Free site audit for any website — check sitemap, meta tags, robots.txt, and Domain Rating in one go.",
   publisher: {
     "@type": "Organization",
     name: "SeoCheckup",
