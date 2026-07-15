@@ -7,7 +7,21 @@ import { FadeIn } from "@/components/motion"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
 import type { AuditCheck, AuditReport, CheckStatus } from "@/lib/audit/types"
 import { cn } from "@/lib/utils"
-import { Check, ChevronDown, Copy, ExternalLink, Loader } from "lucide-react"
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  FileSearch,
+  Globe2,
+  Loader,
+  RefreshCw,
+  Shield,
+  TrendingUp,
+  XCircle,
+} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -29,11 +43,36 @@ function statusColor(status: CheckStatus) {
   return "text-red-600 dark:text-red-400"
 }
 
-function statusDot(status: CheckStatus) {
-  if (status === "pass") return "bg-emerald-500"
-  if (status === "warn") return "bg-amber-500"
-  return "bg-red-500"
+function StatusIcon({ status }: { status: CheckStatus }) {
+  if (status === "pass") {
+    return (
+      <CheckCircle2
+        className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5"
+        aria-hidden
+      />
+    )
+  }
+  if (status === "warn") {
+    return (
+      <AlertTriangle
+        className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5"
+        aria-hidden
+      />
+    )
+  }
+  return (
+    <XCircle
+      className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5"
+      aria-hidden
+    />
+  )
 }
+
+const categoryIcon = {
+  onpage: FileSearch,
+  crawl: Globe2,
+  trust: Shield,
+} as const
 
 function reportToMarkdown(report: AuditReport): string {
   const lines = [
@@ -65,12 +104,9 @@ function reportToMarkdown(report: AuditReport): string {
 
 function CheckRow({ check }: { check: AuditCheck }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start gap-2 py-3 border-b border-border/60 last:border-0">
-      <div className="flex items-start gap-2 min-w-0 flex-1">
-        <span
-          className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", statusDot(check.status))}
-          aria-hidden
-        />
+    <div className="flex flex-col sm:flex-row sm:items-start gap-2 py-3.5 border-b border-border/60 last:border-0">
+      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+        <StatusIcon status={check.status} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-medium text-sm">{check.label}</span>
@@ -233,80 +269,123 @@ export default function AuditClient({ query }: { query: string }) {
 
       {report && !loading && (
         <FadeIn className="mt-10 space-y-10">
-          <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <p className="font-mono text-sm text-muted-foreground">
-                {report.domain}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {new Date(report.auditedAt).toLocaleString()}
-              </p>
-              <div className="mt-4 flex items-baseline gap-3">
-                <span className="text-6xl font-bold font-mono tracking-tight">
-                  {report.score}
-                </span>
-                <span className="text-muted-foreground text-sm">/ 100</span>
+          <header className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mono text-sm font-medium truncate">
+                  {report.domain}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(report.auditedAt).toLocaleString()}
+                </p>
               </div>
-              <div className="mt-3 flex gap-4 text-xs font-mono">
-                <span className="text-red-600 dark:text-red-400">
-                  {report.fail} fail
-                </span>
-                <span className="text-amber-600 dark:text-amber-400">
-                  {report.warn} warn
-                </span>
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  {report.pass} pass
-                </span>
+              <div className="flex gap-2 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={copyReport}>
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy report
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void run(value)}
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Re-run
+                </Button>
               </div>
-              {typeof report.domainRating === "number" && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  DR {Math.round(report.domainRating)} ·{" "}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border bg-muted/20 px-5 py-6 sm:px-6 sm:py-8">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <TrendingUp className="h-4 w-4" aria-hidden />
+                  <span className="text-xs font-mono uppercase tracking-wider">
+                    Domain Rating
+                  </span>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-7xl sm:text-8xl font-bold font-mono tracking-tighter leading-none">
+                    {typeof report.domainRating === "number"
+                      ? Math.round(report.domainRating)
+                      : "—"}
+                  </span>
+                  <span className="text-muted-foreground text-sm font-mono">
+                    / 100
+                  </span>
+                </div>
+                {typeof report.domainRating !== "number" && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {report.domainRatingError || "Unavailable"}
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   <Link
+                    href={`/domain-rating?q=${encodeURIComponent(report.domain)}`}
+                    className="inline-flex items-center gap-1 hover:text-foreground underline underline-offset-2"
+                  >
+                    Open DR tool <ExternalLink className="h-3 w-3" />
+                  </Link>
+                  <span className="opacity-60" aria-hidden>
+                    ·
+                  </span>
+                  <a
                     href={AHREFS_DR_ATTRIBUTION.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline underline-offset-2"
+                    className="opacity-60 hover:opacity-100 hover:text-foreground"
                   >
-                    {AHREFS_DR_ATTRIBUTION.text}
-                  </Link>
-                  {" · "}
-                  <Link
-                    href={AHREFS_DR_ATTRIBUTION.license}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    License
-                  </Link>
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={copyReport}>
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 mr-1.5" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy report
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => void run(value)}
-              >
-                Re-run
-              </Button>
+                    Ahrefs
+                  </a>
+                </div>
+              </div>
+
+              <div className="rounded-xl border px-5 py-6 sm:px-6 sm:py-8">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Shield className="h-4 w-4" aria-hidden />
+                  <span className="text-xs font-mono uppercase tracking-wider">
+                    Audit score
+                  </span>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-5xl sm:text-6xl font-bold font-mono tracking-tighter leading-none">
+                    {report.score}
+                  </span>
+                  <span className="text-muted-foreground text-sm font-mono">
+                    / 100
+                  </span>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-3 text-xs font-mono">
+                  <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                    <XCircle className="h-3.5 w-3.5" aria-hidden />
+                    {report.fail} fail
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+                    {report.warn} warn
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                    {report.pass} pass
+                  </span>
+                </div>
+              </div>
             </div>
           </header>
 
           {report.fixFirst.length > 0 && (
             <section>
-              <h3 className="text-lg font-semibold">Fix first</h3>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="text-lg font-semibold">Fix first</h3>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Highest-impact issues, ordered by severity.
               </p>
@@ -322,6 +401,7 @@ export default function AuditClient({ query }: { query: string }) {
             <h3 className="text-lg font-semibold">All checks</h3>
             {report.categories.map((cat) => {
               const open = openCats[cat.id] ?? true
+              const CatIcon = categoryIcon[cat.id]
               return (
                 <div key={cat.id} className="rounded-lg border overflow-hidden">
                   <button
@@ -332,20 +412,27 @@ export default function AuditClient({ query }: { query: string }) {
                     }
                     aria-expanded={open}
                   >
-                    <div>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <CatIcon
+                        className="h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
                       <span className="font-medium">{cat.label}</span>
-                      <span className="ml-2 font-mono text-sm text-muted-foreground">
+                      <span className="font-mono text-sm text-muted-foreground">
                         {cat.score}/100
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground">
-                      <span className="text-red-600 dark:text-red-400">
+                      <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                        <XCircle className="h-3 w-3" />
                         {cat.fail}
                       </span>
-                      <span className="text-amber-600 dark:text-amber-400">
+                      <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3" />
                         {cat.warn}
                       </span>
-                      <span className="text-emerald-600 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" />
                         {cat.pass}
                       </span>
                       <ChevronDown
