@@ -1,36 +1,45 @@
-import React from "react";
-import { AreaChart } from "lucide-react";
-import InputField from "./input-field";
-import type { Metadata } from "next";
-import { constructMetadata } from "@/lib/utils";
+import React from "react"
+import { AreaChart } from "lucide-react"
+import InputField from "./input-field"
+import type { Metadata } from "next"
+import { constructMetadata } from "@/lib/utils"
+import { FadeIn } from "@/components/motion"
+import { safeDecodeURIComponent } from "@/lib/safe-decode"
 
 export const metadata: Metadata = constructMetadata({
   title: "Sitemap Link Checker | SeoCheckup",
   description: "Easily review your sitemap by adding yoursite.com/sitemap.xml.",
   canonical: "/sitemap",
   ogImage: "/og-dark.png",
-});
+})
 
-export const revalidate = 0;
+export const revalidate = 0
 
-const Sitemap = ({ searchParams }: { searchParams: { q: string } }) => {
+export default async function Sitemap({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const { q } = await searchParams
+  const query = safeDecodeURIComponent(q)
+
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-10">
-      <section className="flex justify-center flex-col items-center gap-4 mt-3">
-        <div
-          className="w-11 h-11 flex justify-center items-center rounded-lg
-       bg-gradient-to-br from-secondary via-black/20 to-secondary/20 dark:from-primary/30 dark:via-primary/50 dark:to-primary text-black backdrop-blur-md"
-        >
-          <AreaChart />
-        </div>
-        <h2 className="text-center text-2xl font-semibold">
-          Sitemap Link Checker
-        </h2>
-      </section>
+      <FadeIn>
+        <section className="flex justify-center flex-col items-center gap-4 mt-3">
+          <div
+            className="w-11 h-11 flex justify-center items-center rounded-lg
+         bg-gradient-to-br from-secondary via-black/20 to-secondary/20 dark:from-primary/30 dark:via-primary/50 dark:to-primary text-black backdrop-blur-md"
+          >
+            <AreaChart />
+          </div>
+          <h2 className="text-center text-2xl font-semibold">
+            Sitemap Link Checker
+          </h2>
+        </section>
+      </FadeIn>
 
-      <InputField query={decodeURIComponent(searchParams.q)} />
+      <InputField key={query || "default"} query={query} />
     </div>
-  );
-};
-
-export default Sitemap;
+  )
+}
