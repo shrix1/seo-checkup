@@ -12,15 +12,6 @@ import {
   removeCommonPrefix,
 } from "@/lib/utils"
 import { Check, Copy, Loader } from "lucide-react"
-
-type ExpandMeta = {
-  rootKind: "urlset" | "sitemapindex" | "unknown"
-  childSitemapsFetched: number
-  childSitemapsFailed: { url: string; reason: string }[]
-  truncated: boolean
-}
-
-type ExpandResult = ExpandMeta & { urls: string[] }
 import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
@@ -31,6 +22,23 @@ import {
 
 const DEFAULT_SITEMAP = "https://supwriter.com/sitemap.xml"
 
+type SitemapSource = {
+  sitemapUrl: string
+  urlCount: number
+  urls: string[]
+  error?: string
+}
+
+type ExpandResult = {
+  indexUrl: string
+  urls: string[]
+  rootKind: "urlset" | "sitemapindex" | "unknown"
+  sources: SitemapSource[]
+  childSitemapsFetched: number
+  childSitemapsFailed: { url: string; reason: string }[]
+  truncated: boolean
+}
+
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITEMAP
   try {
@@ -38,6 +46,23 @@ function initialQuery(query: string) {
   } catch {
     return query
   }
+}
+
+function sourceLabel(sitemapUrl: string): string {
+  try {
+    const pathname = new URL(sitemapUrl).pathname
+    const file = pathname.split("/").filter(Boolean).pop()
+    return file || pathname || sitemapUrl
+  } catch {
+    return sitemapUrl
+  }
+}
+
+function buildView(urls: string[], base: string) {
+  const sortedUrls = [...urls].sort(compareUrls)
+  const modifiedUrls = sortedUrls.map((url) => removeCommonPrefix(url, base))
+  const deep = sortSitemapStructure(restructureSitemap(sortedUrls))
+  return { modifiedUrls, sortedUrls, deep }
 }
 
 const InputField = ({ query }: { query: string }) => {
@@ -51,11 +76,28 @@ const InputField = ({ query }: { query: string }) => {
   const [error, setError] = useState(false)
   const [copied, setCopied] = useState(false)
   const [resultsReady, setResultsReady] = useState(false)
-  const [expandMeta, setExpandMeta] = useState<ExpandMeta | null>(null)
+  const [expandResult, setExpandResult] = useState<ExpandResult | null>(null)
+  const [selectedSource, setSelectedSource] = useState<string>("all")
   const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<
     ReturnType<typeof restructureSitemap>
   >([])
   const hasFetched = useRef(false)
+
+  const applySourceFilter = useCallback(
+    (expanded: ExpandResult, sourceKey: string, base: string) => {
+      const urls =
+        sourceKey === "all"
+          ? expanded.urls
+          : (expanded.sources.find((s) => s.sitemapUrl === sourceKey)?.urls ??
+            [])
+      const view = buildView(urls, base)
+      setData(view.modifiedUrls)
+      setRawUrls(view.sortedUrls)
+      setSitemapWithDeepRoutes(view.deep)
+      setResultsReady(view.sortedUrls.length > 0 || sourceKey !== "all")
+    },
+    []
+  )
 
   const fetchExpandedSitemap = useCallback(
     async (url: string): Promise<ExpandResult | null> => {
@@ -73,7 +115,7 @@ const InputField = ({ query }: { query: string }) => {
           return null
         }
 
-        if (!res.ok || !Array.isArray(json.urls)) {
+        if (!res.ok || !Array.isArray(json.urls) || !Array.isArray(json.sources)) {
           return null
         }
 
@@ -90,13 +132,7 @@ const InputField = ({ query }: { query: string }) => {
     async (target: string) => {
       if (!target) {
         setError(true)
-        return {
-          baseUrl: "",
-          urls: [],
-          raw: [],
-          sitemapWithDeepRoutes: [] as ReturnType<typeof restructureSitemap>,
-          meta: null,
-        }
+        return null
       }
       try {
         setLoading(true)
@@ -105,81 +141,48 @@ const InputField = ({ query }: { query: string }) => {
         if (!expanded) {
           setError(true)
           setLoading(false)
-          setExpandMeta(null)
-          return {
-            baseUrl: "",
-            urls: [],
-            raw: [],
-            sitemapWithDeepRoutes: [],
-            meta: null,
-          }
+          setExpandResult(null)
+          return null
         }
 
-        const fetched = expanded.urls
-        const deep = sortSitemapStructure(restructureSitemap(fetched))
-        const sortedUrls = [...fetched].sort(compareUrls)
         const base = getSitemapBaseUrl(target)
-        const modifiedUrls = sortedUrls.map((url) =>
-          removeCommonPrefix(url, base)
-        )
-        const meta = {
-          rootKind: expanded.rootKind,
-          childSitemapsFetched: expanded.childSitemapsFetched,
-          childSitemapsFailed: expanded.childSitemapsFailed,
-          truncated: expanded.truncated,
-        }
-        setError(fetched.length === 0)
+        setBaseUrl(base)
+        setExpandResult(expanded)
+        setSelectedSource("all")
+        applySourceFilter(expanded, "all", base)
+        setError(expanded.urls.length === 0)
         setLoading(false)
-        setExpandMeta(meta)
-        return {
-          baseUrl: base,
-          urls: modifiedUrls,
-          raw: sortedUrls,
-          sitemapWithDeepRoutes: deep,
-          meta,
-        }
+        return expanded
       } catch {
         setLoading(false)
         setError(true)
-        setExpandMeta(null)
-        return {
-          baseUrl: "",
-          urls: [],
-          raw: [],
-          sitemapWithDeepRoutes: [],
-          meta: null,
-        }
+        setExpandResult(null)
+        return null
       }
     },
-    [fetchExpandedSitemap]
+    [applySourceFilter, fetchExpandedSitemap]
   )
 
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
-    ;(async () => {
-      const result = await getUrls(initial)
-      setSitemapWithDeepRoutes(result.sitemapWithDeepRoutes)
-      setBaseUrl(result.baseUrl)
-      setData(result.urls)
-      setRawUrls(result.raw)
-      setResultsReady(result.urls.length > 0)
-    })()
+    void getUrls(initial)
   }, [getUrls, initial])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     await logToolUsage(value, "SITEMAP")
     if (value === initial) {
-      const result = await getUrls(value)
-      setSitemapWithDeepRoutes(result.sitemapWithDeepRoutes)
-      setBaseUrl(result.baseUrl)
-      setData(result.urls)
-      setRawUrls(result.raw)
-      setResultsReady(result.urls.length > 0)
+      await getUrls(value)
       return
     }
     router.replace(`/sitemap?q=${encodeURIComponent(value)}`)
+  }
+
+  const handleSourceChange = (sourceKey: string) => {
+    setSelectedSource(sourceKey)
+    if (!expandResult) return
+    applySourceFilter(expandResult, sourceKey, baseUrl)
   }
 
   const handleCopy = async () => {
@@ -188,6 +191,20 @@ const InputField = ({ query }: { query: string }) => {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  const showSourceFilter =
+    expandResult?.rootKind === "sitemapindex" &&
+    expandResult.sources.length > 0
+
+  const selectedSourceUrl =
+    selectedSource === "all"
+      ? expandResult?.indexUrl
+      : selectedSource
+
+  const selectedSourceMeta =
+    selectedSource === "all"
+      ? null
+      : expandResult?.sources.find((s) => s.sitemapUrl === selectedSource)
 
   return (
     <div className="w-full flex justify-center flex-col items-center px-4 md:px-0">
@@ -220,7 +237,7 @@ const InputField = ({ query }: { query: string }) => {
             <Skeleton key={i} className="h-8 w-full" />
           ))}
         </div>
-      ) : data.length === 0 || error ? (
+      ) : error || !expandResult || expandResult.urls.length === 0 ? (
         <div className="px-3 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-3 bg-red-100 text-red-600 rounded-lg">
           <p>
             It seems like the sitemap url:{" "}
@@ -235,10 +252,10 @@ const InputField = ({ query }: { query: string }) => {
               {baseUrl}
             </Badge>
             <span className="text-sm">
-              {data.length.toLocaleString()} URL
-              {data.length === 1 ? "" : "s"} found
+              {rawUrls.length.toLocaleString()} URL
+              {rawUrls.length === 1 ? "" : "s"} found
               <Badge className="ml-2 font-medium font-mono text-base">
-                {data.length.toLocaleString()}
+                {rawUrls.length.toLocaleString()}
               </Badge>
             </span>
             <Button
@@ -247,29 +264,102 @@ const InputField = ({ query }: { query: string }) => {
               size="sm"
               onClick={handleCopy}
               className="gap-2"
+              disabled={!rawUrls.length}
             >
               {copied ? (
                 <Check className="h-4 w-4" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}
-              {copied ? "Copied" : "Copy all URLs"}
+              {copied ? "Copied" : "Copy URLs"}
             </Button>
           </section>
 
-          {expandMeta && (
-            <p className="text-sm text-muted-foreground mb-6 text-center">
-              {expandMeta.rootKind === "sitemapindex"
-                ? `Expanded ${expandMeta.childSitemapsFetched} child sitemap${expandMeta.childSitemapsFetched === 1 ? "" : "s"}`
-                : "Parsed urlset sitemap"}
-              {expandMeta.childSitemapsFailed.length > 0
-                ? ` · ${expandMeta.childSitemapsFailed.length} failed`
-                : ""}
-              {expandMeta.truncated ? " · truncated at limit" : ""}
-            </p>
+          {expandResult && (
+            <div className="w-full max-w-xl flex flex-col items-center gap-3 mb-6 px-2">
+              <p className="text-sm text-muted-foreground text-center break-all">
+                <span className="font-medium text-foreground">
+                  {expandResult.rootKind === "sitemapindex"
+                    ? "Index:"
+                    : "Sitemap:"}
+                </span>{" "}
+                <a
+                  href={expandResult.indexUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono underline underline-offset-2 hover:text-foreground"
+                >
+                  {expandResult.indexUrl}
+                </a>
+              </p>
+
+              {showSourceFilter && (
+                <>
+                  <label className="w-full flex flex-col gap-1.5 text-sm">
+                    <span className="text-muted-foreground text-center">
+                      Filter by child sitemap
+                    </span>
+                    <select
+                      value={selectedSource}
+                      onChange={(e) => handleSourceChange(e.target.value)}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="all">
+                        All sitemaps ({expandResult.urls.length.toLocaleString()}
+                        )
+                      </option>
+                      {expandResult.sources.map((source) => (
+                        <option
+                          key={source.sitemapUrl}
+                          value={source.sitemapUrl}
+                          title={source.sitemapUrl}
+                        >
+                          {sourceLabel(source.sitemapUrl)} (
+                          {source.error
+                            ? "failed"
+                            : source.urlCount.toLocaleString()}
+                          )
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {selectedSourceUrl && (
+                    <p className="text-xs text-muted-foreground text-center break-all">
+                      <span className="font-medium text-foreground">
+                        {selectedSource === "all" ? "Showing:" : "Source:"}
+                      </span>{" "}
+                      <a
+                        href={selectedSourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono underline underline-offset-2 hover:text-foreground"
+                      >
+                        {selectedSourceUrl}
+                      </a>
+                      {selectedSourceMeta?.error
+                        ? ` — ${selectedSourceMeta.error}`
+                        : ""}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {(expandResult.truncated ||
+                expandResult.childSitemapsFailed.length > 0) && (
+                <p className="text-xs text-muted-foreground text-center">
+                  {expandResult.childSitemapsFailed.length > 0
+                    ? `${expandResult.childSitemapsFailed.length} child sitemap(s) failed`
+                    : ""}
+                  {expandResult.truncated
+                    ? `${expandResult.childSitemapsFailed.length > 0 ? " · " : ""}truncated at limit`
+                    : ""}
+                </p>
+              )}
+            </div>
           )}
 
-          {resultsReady && (
+          {resultsReady && rawUrls.length > 0 && (
             <div className="flex flex-wrap gap-3 max-w-5xl">
               <SitemapToJSX
                 sitemap={sitemapWithDeepRoutes}
@@ -277,6 +367,15 @@ const InputField = ({ query }: { query: string }) => {
               />
             </div>
           )}
+
+          {resultsReady &&
+            rawUrls.length === 0 &&
+            selectedSource !== "all" &&
+            selectedSourceMeta?.error && (
+              <p className="text-sm text-red-600 text-center">
+                Could not load this child sitemap.
+              </p>
+            )}
         </FadeIn>
       )}
     </div>
