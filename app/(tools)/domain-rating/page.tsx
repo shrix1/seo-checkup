@@ -5,16 +5,35 @@ import { constructMetadata } from "@/lib/utils"
 import { FadeIn } from "@/components/motion"
 import { safeDecodeURIComponent } from "@/lib/safe-decode"
 import DomainRatingClient from "./domain-rating-client"
+import JsonLd from "@/components/json-ld"
+import ToolRelatedLinks from "@/components/tool-related-links"
+import { absoluteUrl, features } from "@/lib/site"
+
+const feature = features.domainRating
 
 export const metadata: Metadata = constructMetadata({
   title: "Free Domain Rating Checker | SeoCheckup",
-  description:
-    "Check Ahrefs Domain Rating (DR) for any domain free. Instant authority score with required Ahrefs attribution.",
-  canonical: "/domain-rating",
+  description: feature.description,
+  canonical: feature.toolPath,
   ogImage: "/og-dark.png",
 })
 
 export const revalidate = 0
+
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: feature.appName,
+  url: absoluteUrl(feature.toolPath),
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  description: feature.description,
+}
 
 export default async function DomainRatingPage({
   searchParams,
@@ -26,6 +45,7 @@ export default async function DomainRatingPage({
 
   return (
     <div className="min-h-screen max-h-full flex items-center flex-col pb-16 px-4 md:px-0">
+      <JsonLd data={appJsonLd} />
       <FadeIn>
         <section className="flex justify-center flex-col items-center gap-4 mt-3">
           <div
@@ -43,6 +63,7 @@ export default async function DomainRatingPage({
         </section>
       </FadeIn>
       <DomainRatingClient key={query || "default"} query={query} />
+      <ToolRelatedLinks feature="domainRating" />
     </div>
   )
 }

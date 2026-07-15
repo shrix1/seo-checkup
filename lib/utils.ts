@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { SITE_URL } from "@/lib/site"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -41,8 +42,10 @@ export function constructMetadata({
   canonical: string
   ogImage?: string
 }) {
+  const path = canonical.startsWith("/") ? canonical : `/${canonical}`
+
   return {
-    metadataBase: new URL("https://seocheckup.vercel.app"),
+    metadataBase: new URL(SITE_URL),
     title,
     description,
     keywords: [
@@ -60,13 +63,13 @@ export function constructMetadata({
       title,
       description,
       type: "website",
-      url: canonical,
+      url: path,
       images: [
         {
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: "OG Image",
+          alt: title,
         },
       ],
     },
@@ -74,7 +77,7 @@ export function constructMetadata({
       icon: "/icon.png",
     },
     alternates: {
-      canonical,
+      canonical: path,
     },
     authors: [
       {
@@ -89,6 +92,7 @@ export function constructMetadata({
       creator: "@shribuilds",
       site: "shri",
       card: "summary_large_image",
+      images: [ogImage],
     },
   }
 }

@@ -1,12 +1,15 @@
 import SeoToolLanding from "@/components/seo-tool-landing"
+import { blogPath, features } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
+
+const feature = features.metadata
 
 export const metadata: Metadata = constructMetadata({
   title: "Free Meta Tags Checker | SeoCheckup",
   description:
-    "Check website meta tags and preview title, description, and Open Graph social cards for Google, X, and more.",
-  canonical: "/meta-tags-checker",
+    "Check website meta tags free: preview title and description as search engines may show them, plus Open Graph social cards, so snippets look right before you publish.",
+  canonical: feature.landingPath,
 })
 
 export default function MetaTagsCheckerPage() {
@@ -15,8 +18,10 @@ export default function MetaTagsCheckerPage() {
       h1="Free Meta Tags Checker"
       pitch="Preview title, description, and social cards so search and share snippets look right before you publish."
       ctaHref="/metadata?q=https://shrix1.com"
-      canonicalPath="/meta-tags-checker"
-      appName="Meta Tags Checker"
+      canonicalPath={feature.landingPath}
+      appName={feature.appName}
+      blogHref={blogPath(feature.blogSlug)}
+      blogLabel={feature.blogLabel}
       benefits={[
         "See title and meta description as search engines may show them",
         "Preview Open Graph and social share cards",
@@ -40,6 +45,7 @@ export default function MetaTagsCheckerPage() {
         },
       ]}
       related={[
+        { href: "/site-audit", label: "Website SEO Audit" },
         { href: "/sitemap-checker", label: "XML Sitemap Checker" },
         { href: "/robots-txt-checker", label: "Robots.txt Checker" },
       ]}

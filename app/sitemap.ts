@@ -1,31 +1,37 @@
+import { blogMetadata, blogSlugs } from "@/lib/blog-metadata"
+import { SITE_URL, features } from "@/lib/site"
 import { MetadataRoute } from "next"
-import { blogSlugs } from "@/lib/blog-metadata"
+
+const STABLE_DATE = new Date("2026-07-15")
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://seocheckup.vercel.app"
-  const pages: { path: string; priority: number }[] = [
+  const staticPages: { path: string; priority: number }[] = [
     { path: "/", priority: 1 },
-    { path: "/site-audit", priority: 0.95 },
-    { path: "/domain-rating-checker", priority: 0.9 },
-    { path: "/sitemap-checker", priority: 0.9 },
-    { path: "/meta-tags-checker", priority: 0.9 },
-    { path: "/robots-txt-checker", priority: 0.9 },
-    { path: "/audit", priority: 0.85 },
-    { path: "/domain-rating", priority: 0.85 },
-    { path: "/sitemap", priority: 0.8 },
-    { path: "/metadata", priority: 0.8 },
-    { path: "/robots", priority: 0.8 },
+    { path: features.audit.landingPath, priority: 0.95 },
+    { path: features.domainRating.landingPath, priority: 0.9 },
+    { path: features.sitemap.landingPath, priority: 0.9 },
+    { path: features.metadata.landingPath, priority: 0.9 },
+    { path: features.robots.landingPath, priority: 0.9 },
+    { path: features.audit.toolPath, priority: 0.85 },
+    { path: features.domainRating.toolPath, priority: 0.85 },
+    { path: features.sitemap.toolPath, priority: 0.8 },
+    { path: features.metadata.toolPath, priority: 0.8 },
+    { path: features.robots.toolPath, priority: 0.8 },
     { path: "/blog", priority: 0.75 },
+  ]
+
+  return [
+    ...staticPages.map(({ path, priority }) => ({
+      url: new URL(path, SITE_URL).toString(),
+      lastModified: STABLE_DATE,
+      changeFrequency: "monthly" as const,
+      priority,
+    })),
     ...blogSlugs.map((slug) => ({
-      path: `/blog/${slug}`,
+      url: new URL(`/blog/${slug}`, SITE_URL).toString(),
+      lastModified: new Date(blogMetadata[slug].date),
+      changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
   ]
-
-  return pages.map(({ path, priority }) => ({
-    url: new URL(path, baseUrl).toString(),
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority,
-  }))
 }
