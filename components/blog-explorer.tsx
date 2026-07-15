@@ -30,15 +30,17 @@ export default function BlogExplorer() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
-      <h1 className="text-4xl sm:text-5xl font-bold font-mono tracking-tight">
-        Blog
-      </h1>
-      <p className="mt-3 text-muted-foreground max-w-xl">
-        Practical guides for sitemaps, meta tags, robots.txt, Domain Rating, and
-        free site audits.
-      </p>
+      <div className="text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold font-mono tracking-tight">
+          Blog
+        </h1>
+        <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+          Practical guides for sitemaps, meta tags, robots.txt, Domain Rating, and
+          free site audits.
+        </p>
+      </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center">
+      <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-center">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -46,7 +48,7 @@ export default function BlogExplorer() {
           className="flex h-9 w-full sm:max-w-xs rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label="Search blog posts"
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
           {categories.map((cat) => (
             <button
               key={cat}

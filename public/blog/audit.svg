@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
   <rect width="1200" height="630" fill="#0a0a0a"/>
-  <rect x="0" y="0" width="1200" height="630" fill="url(#g)" opacity="0.5"/>
+  <rect width="1200" height="630" fill="url(#g)" opacity="0.5"/>
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1200" y2="630">
       <stop stop-color="#222"/><stop offset="1" stop-color="#111"/>
     </linearGradient>
   </defs>
-  <text x="80" y="320" fill="#fafafa" font-family="ui-monospace,monospace" font-size="72" font-weight="700">Site Audit</text>
-  <text x="80" y="390" fill="#a3a3a3" font-family="ui-monospace,monospace" font-size="28">SeoCheckup</text>
+  <text x="600" y="300" text-anchor="middle" fill="#fafafa" font-family="ui-monospace,monospace" font-size="72" font-weight="700">Site Audit</text>
+  <text x="600" y="370" text-anchor="middle" fill="#a3a3a3" font-family="ui-monospace,monospace" font-size="28">SeoCheckup</text>
 </svg>
