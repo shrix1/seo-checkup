@@ -1,89 +1,106 @@
-"use client";
-import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { Loader, Image as ImageIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { postDiscordLogs } from "@/lib/discord-webhook";
-import Link from "next/link";
+"use client"
+
+import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Image from "next/image"
+import { Loader, Image as ImageIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { logToolUsage } from "@/lib/log-tool-usage"
+import Link from "next/link"
+
+const DEFAULT_SITE = "https://freetoolsfr.com"
+
+function initialQuery(query: string) {
+  if (!query) return DEFAULT_SITE
+  try {
+    return decodeURIComponent(query)
+  } catch {
+    return query
+  }
+}
 
 const InputFieldMetadata = ({ query }: { query: string }) => {
-  const router = useRouter();
-  const [value, setValue] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [ogImage, setOgImage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [url, setUrl] = useState("");
+  const router = useRouter()
+  const initial = useMemo(() => initialQuery(query), [query])
+  const [value, setValue] = useState(initial)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [ogImage, setOgImage] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const [url, setUrl] = useState("")
+  const hasFetched = useRef(false)
 
-  useEffect(() => {
-    const q = decodeURIComponent(query);
-    setValue(q || "https://freetoolsfr.com");
-  }, [query]);
-
-  useEffect(() => {
-    (async () => {
-      await handleSubmit();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (value) {
-      router.push(`/metadata?q=${encodeURIComponent(value)}`);
+  const fetchMetadata = useCallback(async (target: string) => {
+    if (!target) {
+      setError(true)
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  async function handleSubmit() {
     try {
-      setLoading(true);
-      const data = await fetch(`/api/v1?q=${decodeURIComponent(query)}`);
-      const jsonData = await data.json();
-      if (jsonData.error === "Rate limit exceeded") {
-        alert(
-          "You reached the limit, try again in " +
-          jsonData.data.reset +
-          " hours or try again later"
-        );
-        return [];
+      setLoading(true)
+      setError(false)
+      const data = await fetch(`/api/v1?q=${encodeURIComponent(target)}`)
+      const jsonData = await data.json()
+
+      if (data.status === 429 || jsonData.error === "Rate limit exceeded") {
+        const resetMs = jsonData.reset ?? jsonData.data?.reset
+        const hours =
+          typeof resetMs === "number"
+            ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
+            : "?"
+        alert(`You reached the limit, try again in ${hours} hours or later`)
+        return
       }
-      await postDiscordLogs(decodeURIComponent(query), "METADATA");
 
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = jsonData;
+      if (!data.ok || typeof jsonData !== "string") {
+        setError(true)
+        return
+      }
 
-      const title = tempDiv.querySelector("title")?.textContent;
-      setTitle(title || "Untitled");
+      await logToolUsage(target, "METADATA")
 
-      const description = tempDiv
+      const tempDiv = document.createElement("div")
+      tempDiv.innerHTML = jsonData
+
+      const pageTitle = tempDiv.querySelector("title")?.textContent
+      setTitle(pageTitle || "Untitled")
+
+      const pageDescription = tempDiv
         .querySelector('meta[name="description"]')
-        ?.getAttribute("content");
-
-      setDescription(description || "Untitled");
+        ?.getAttribute("content")
+      setDescription(pageDescription || "Untitled")
 
       const ogImageUrl = tempDiv
         .querySelector('meta[property="og:image"]')
-        ?.getAttribute("content");
-      setOgImage(ogImageUrl || "");
+        ?.getAttribute("content")
+      setOgImage(ogImageUrl || "")
 
-      setUrl(value);
-    } catch (error) {
-      console.error("Error fetching metadata:", error);
-      setError(true);
+      setUrl(target)
+    } catch (err) {
+      console.error("Error fetching metadata:", err)
+      setError(true)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+    void fetchMetadata(initial)
+  }, [fetchMetadata, initial])
 
   return (
     <div className="w-full flex justify-center flex-col items-center px-4 md:px-0 ">
       <form
         onSubmit={async (e) => {
-          e.preventDefault();
-          await handleSubmit();
+          e.preventDefault()
+          if (value === initial) {
+            await fetchMetadata(value)
+            return
+          }
+          router.replace(`/metadata?q=${encodeURIComponent(value)}`)
         }}
         className="w-full md:w-[400px] flex justify-center my-6 items-center h-[70px] sticky top-2 rounded-lg flex-col"
       >
@@ -96,12 +113,10 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           className="text-base min-h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
         />
       </form>
-      <p className="text-sm text-gray-500 mb-10 -mt-8">
+      <p className="text-sm text-muted-foreground mb-10 -mt-8">
         example url:{" "}
         <Link href="https://shrix1.com" target="_blank">
-          <span className="font-medium text-black dark:text-white">
-            https://shrix1.com
-          </span>
+          <span className="font-medium text-foreground">https://shrix1.com</span>
         </Link>
       </p>
 
@@ -129,19 +144,17 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           </MetaDataContainer>
 
           <MetaDataContainer title="X ( aka twitter )">
-            <div className="">
+            <div>
               <div className="relative">
                 <ImageContainer
                   ogImage={ogImage}
                   title={title}
                   className="rounded-xl"
                 />
-
                 <h3 className="text-xs max-w-[400px] rounded-md px-2 py-0.5 bg-black line-clamp-1 text-white absolute bottom-3 left-3">
                   {title}
                 </h3>
               </div>
-
               <p className="text-sm text-gray-500 mt-1">
                 From {url ? new URL(url)?.hostname : url}
               </p>
@@ -157,13 +170,11 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
                   {description}
                 </p>
               </div>
-              <div>
-                <ImageContainer
-                  ogImage={ogImage}
-                  title={title}
-                  className="rounded-none"
-                />
-              </div>
+              <ImageContainer
+                ogImage={ogImage}
+                title={title}
+                className="rounded-none"
+              />
             </div>
           </MetaDataContainer>
 
@@ -186,7 +197,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
           </MetaDataContainer>
 
           <MetaDataContainer title="Discord">
-            <div className="rounded-md bg-slate-100 dark:bg-gray-700 p-4 border-l-4 border-l-gray-400 dark:border-l-gray-400">
+            <div className="rounded-md bg-slate-100 dark:bg-gray-700 p-4 border-l-4 border-l-gray-400">
               <h3 className="line-clamp-1 text-blue-500">{title}</h3>
               <p className="text-sm text-gray-500 dark:text-white line-clamp-3">
                 {description}
@@ -222,17 +233,17 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         </section>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default InputFieldMetadata;
+export default InputFieldMetadata
 
 function MetaDataContainer({
   title,
   children,
 }: {
-  title: string;
-  children: React.ReactNode;
+  title: string
+  children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -241,7 +252,7 @@ function MetaDataContainer({
       </h2>
       {children}
     </div>
-  );
+  )
 }
 
 function ImageContainer({
@@ -249,9 +260,9 @@ function ImageContainer({
   className,
   title,
 }: {
-  ogImage: string;
-  className: string;
-  title: string;
+  ogImage: string
+  className: string
+  title: string
 }) {
   return ogImage ? (
     <Image
@@ -265,5 +276,5 @@ function ImageContainer({
     <div className="w-[500px] h-[300px] bg-slate-200 grid place-items-center">
       <ImageIcon className="h-10 text-gray-400" />
     </div>
-  );
+  )
 }
