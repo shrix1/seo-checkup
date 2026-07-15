@@ -62,8 +62,9 @@ export default function HomeHero() {
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight font-mono">
             SeoCheckup
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-md">
-            Free site audit for sitemaps, metadata, robots.txt, and Domain Rating.
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
+            Free site audit for any website — check sitemap, meta tags,
+            robots.txt, and Domain Rating in one go.
           </p>
 
           <form

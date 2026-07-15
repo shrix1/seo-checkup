@@ -33,7 +33,7 @@ export function getSitemapBaseUrl(sitemapUrl: string): string {
 export function constructMetadata({
   title = "SeoCheckup — Free Site Audit & SEO Tools",
   description =
-    "Free website SEO audit, Domain Rating checker, XML sitemap expander, meta tags preview, and robots.txt viewer.",
+    "Free site audit for any website — check sitemap, meta tags, robots.txt, and Domain Rating in one go.",
   canonical = "/",
   ogImage = "/og-light.png",
 }: {
