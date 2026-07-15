@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FadeIn } from "@/components/motion"
-import { logToolUsage } from "@/lib/log-tool-usage"
 import { Check, Copy, Loader } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -65,7 +64,7 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   const initial = useMemo(() => initialQuery(query), [query])
   const [value, setValue] = useState(initial)
   const [body, setBody] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [copied, setCopied] = useState(false)
   const hasFetched = useRef(false)
@@ -78,7 +77,9 @@ const InputFieldRobots = ({ query }: { query: string }) => {
     try {
       setLoading(true)
       setError(false)
-      const res = await fetch(`/api/v1?q=${encodeURIComponent(url)}`)
+      const res = await fetch(
+        `/api/v1?q=${encodeURIComponent(url)}&tool=ROBOTS`
+      )
       const json = await res.json()
 
       if (res.status === 429 || json.error === "Rate limit exceeded") {
@@ -111,15 +112,11 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
-    ;(async () => {
-      await fetchRobots(initial)
-      await logToolUsage(initial, "ROBOTS")
-    })()
+    void fetchRobots(initial)
   }, [fetchRobots, initial])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    await logToolUsage(value, "ROBOTS")
     if (value === initial) {
       await fetchRobots(value)
       return

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { runAudit } from "@/lib/audit/run-audit"
 import { getClientIp } from "@/lib/client-ip"
+import { postDiscordLogs } from "@/lib/discord-webhook"
+import { normalizeOrigin } from "@/lib/fetch-url"
 import getRatelimit from "@/lib/rate-limit"
+import { assertPublicHttpUrl } from "@/lib/safe-url"
 
 export const maxDuration = 60
 
@@ -40,11 +43,17 @@ export async function GET(req: Request) {
   }
 
   try {
+    const origin = normalizeOrigin(decoded)
+    await assertPublicHttpUrl(origin.href)
     const report = await runAudit(decoded)
+    void postDiscordLogs(report.origin, "AUDIT")
     return NextResponse.json(report)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Audit failed"
-    const status = message.includes("http") || message.includes("URL") ? 400 : 500
+    const status =
+      /http|URL|Host|DNS|private|reserved|credentials|ports/i.test(message)
+        ? 400
+        : 500
     return NextResponse.json({ error: message }, { status })
   }
 }

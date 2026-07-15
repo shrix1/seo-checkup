@@ -2,6 +2,7 @@ import { fetchDomainRating } from "@/lib/ahrefs-dr"
 import { fetchUrl, hostnameFromInput, normalizeOrigin } from "@/lib/fetch-url"
 import { expandSitemap } from "@/lib/sitemap-expand"
 import { parseHtml, parseSitemapLines } from "@/lib/audit/parse-html"
+import { sameRegistrableHost } from "@/lib/safe-url"
 import type {
   AuditCheck,
   AuditReport,
@@ -301,13 +302,21 @@ export async function runAudit(input: string): Promise<AuditReport> {
     deepLink: robotsDeep,
   })
 
+  const originHost = originUrl.hostname
   const sitemapCandidates = [
-    ...sitemapFromRobots,
+    ...sitemapFromRobots.filter((u) => {
+      try {
+        return sameRegistrableHost(new URL(u).hostname, originHost)
+      } catch {
+        return false
+      }
+    }),
     `${origin}/sitemap.xml`,
+    `${origin}/sitemap_index.xml`,
   ]
   const uniqueSitemaps = [...new Set(sitemapCandidates)]
 
-  let sitemapUrlUsed = uniqueSitemaps[0]
+  let sitemapUrlUsed = uniqueSitemaps[0] || `${origin}/sitemap.xml`
   let sitemapUrlCount = 0
   let sitemapTruncated = false
   let sitemapError: string | undefined
@@ -315,16 +324,28 @@ export async function runAudit(input: string): Promise<AuditReport> {
 
   for (const candidate of uniqueSitemaps) {
     try {
-      const expanded = await expandSitemap(candidate)
-      if (expanded.urls.length > 0 || expanded.rootKind !== "unknown") {
+      const expanded = await expandSitemap(candidate, {
+        maxDepth: 2,
+        maxChildSitemaps: 20,
+        maxPageUrls: 5_000,
+      })
+      // Prefer a candidate that yields page URLs; otherwise keep looking.
+      if (expanded.urls.length > 0) {
         sitemapUrlUsed = candidate
         sitemapUrlCount = expanded.urls.length
         sitemapTruncated = expanded.truncated
         sitemapExpanded = true
-        if (expanded.urls.length === 0 && expanded.childSitemapsFailed.length) {
+        break
+      }
+      if (!sitemapExpanded && expanded.rootKind !== "unknown") {
+        sitemapUrlUsed = candidate
+        sitemapUrlCount = 0
+        sitemapTruncated = expanded.truncated
+        sitemapExpanded = true
+        if (expanded.childSitemapsFailed.length) {
           sitemapError = expanded.childSitemapsFailed[0]?.reason
         }
-        break
+        // Continue searching for a candidate with real URLs.
       }
     } catch (err) {
       sitemapError = err instanceof Error ? err.message : "Expand failed"

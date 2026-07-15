@@ -1,5 +1,4 @@
-const FETCH_TIMEOUT_MS = 15_000
-const MAX_BODY_BYTES = 2_000_000
+import { safeFetch } from "@/lib/safe-fetch"
 
 export type FetchUrlResult = {
   ok: boolean
@@ -11,37 +10,14 @@ export type FetchUrlResult = {
 }
 
 export async function fetchUrl(url: string): Promise<FetchUrlResult> {
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      headers: {
-        "User-Agent": "SeoCheckupBot/1.0 (+https://seocheckup.vercel.app)",
-        Accept: "*/*",
-      },
-    })
-
-    const text = await res.text()
-    const body =
-      text.length > MAX_BODY_BYTES ? text.slice(0, MAX_BODY_BYTES) : text
-
-    return {
-      ok: res.ok,
-      status: res.status,
-      finalUrl: res.url || url,
-      headers: res.headers,
-      body,
-      error: res.ok ? undefined : `HTTP ${res.status}`,
-    }
-  } catch (err) {
-    return {
-      ok: false,
-      status: 0,
-      finalUrl: url,
-      headers: new Headers(),
-      body: "",
-      error: err instanceof Error ? err.message : "Fetch failed",
-    }
+  const res = await safeFetch(url)
+  return {
+    ok: res.ok,
+    status: res.status,
+    finalUrl: res.finalUrl,
+    headers: res.headers,
+    body: res.body.toString("utf8"),
+    error: res.error,
   }
 }
 

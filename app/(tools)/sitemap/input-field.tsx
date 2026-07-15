@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FadeIn } from "@/components/motion"
-import { logToolUsage } from "@/lib/log-tool-usage"
 import {
   compareUrls,
   getSitemapBaseUrl,
@@ -171,7 +170,6 @@ const InputField = ({ query }: { query: string }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    await logToolUsage(value, "SITEMAP")
     if (value === initial) {
       await getUrls(value)
       return

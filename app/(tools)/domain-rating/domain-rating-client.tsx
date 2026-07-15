@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FadeIn } from "@/components/motion"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
-import { logToolUsage } from "@/lib/log-tool-usage"
 import { Loader } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -28,7 +27,7 @@ export default function DomainRatingClient({ query }: { query: string }) {
   const [value, setValue] = useState(initial)
   const [domain, setDomain] = useState<string | null>(null)
   const [rating, setRating] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const hasFetched = useRef(false)
 
@@ -46,6 +45,15 @@ export default function DomainRatingClient({ query }: { query: string }) {
         `/api/domain-rating?q=${encodeURIComponent(url.trim())}`
       )
       const data = await res.json()
+      if (res.status === 429 || data.error === "Rate limit exceeded") {
+        const resetMs = data.reset
+        const hours =
+          typeof resetMs === "number"
+            ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
+            : "?"
+        setError(`Rate limit exceeded. Try again in ${hours} hours.`)
+        return
+      }
       if (!res.ok) {
         setError(data.error || "Could not load Domain Rating")
         if (data.domain) setDomain(data.domain)
@@ -53,7 +61,6 @@ export default function DomainRatingClient({ query }: { query: string }) {
       }
       setDomain(data.domain)
       setRating(data.domainRating)
-      void logToolUsage(url.trim(), "DOMAIN_RATING")
     } catch {
       setError("Could not load Domain Rating")
     } finally {
@@ -69,9 +76,12 @@ export default function DomainRatingClient({ query }: { query: string }) {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const next = value.trim()
+    const next = value.trim() || DEFAULT_SITE
+    if (next === initial) {
+      void run(next)
+      return
+    }
     router.push(`/domain-rating?q=${encodeURIComponent(next)}`)
-    void run(next)
   }
 
   return (
@@ -128,6 +138,15 @@ export default function DomainRatingClient({ query }: { query: string }) {
               className="underline underline-offset-2"
             >
               {AHREFS_DR_ATTRIBUTION.text}
+            </Link>
+            {" · "}
+            <Link
+              href={AHREFS_DR_ATTRIBUTION.license}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 text-muted-foreground"
+            >
+              License
             </Link>
           </p>
           <div className="mt-8">

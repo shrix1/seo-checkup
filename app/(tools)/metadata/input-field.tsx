@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { Loader, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { logToolUsage } from "@/lib/log-tool-usage"
 import Link from "next/link"
 
 const DEFAULT_SITE = "https://shrix1.com"
@@ -40,7 +39,9 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
     try {
       setLoading(true)
       setError(false)
-      const data = await fetch(`/api/v1?q=${encodeURIComponent(target)}`)
+      const data = await fetch(
+        `/api/v1?q=${encodeURIComponent(target)}&tool=METADATA`
+      )
       const jsonData = await data.json()
 
       if (data.status === 429 || jsonData.error === "Rate limit exceeded") {
@@ -57,8 +58,6 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         setError(true)
         return
       }
-
-      await logToolUsage(target, "METADATA")
 
       const tempDiv = document.createElement("div")
       tempDiv.innerHTML = jsonData

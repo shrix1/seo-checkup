@@ -71,7 +71,7 @@ const Navbar = () => {
         <Link
           href="/blog"
           className={cn(
-            "hidden md:inline text-sm font-medium px-2 py-1 rounded-md hover:bg-accent",
+            "text-sm font-medium px-2 py-1 rounded-md hover:bg-accent",
             pathname.startsWith("/blog") && "underline underline-offset-4"
           )}
         >
