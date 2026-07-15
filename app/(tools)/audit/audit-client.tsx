@@ -19,6 +19,7 @@ import {
   Loader,
   RefreshCw,
   Shield,
+  Sparkles,
   TrendingUp,
   XCircle,
 } from "lucide-react"
@@ -102,6 +103,53 @@ function reportToMarkdown(report: AuditReport): string {
   return lines.filter((l) => l !== null).join("\n")
 }
 
+function reportToAiPrompt(report: AuditReport): string {
+  const drLine =
+    typeof report.domainRating === "number"
+      ? `- Domain Rating: ${Math.round(report.domainRating)}/100`
+      : null
+
+  const fixFirst =
+    report.fixFirst.length > 0
+      ? report.fixFirst.flatMap((c) => [
+          `- [${c.status.toUpperCase()}] ${c.label}`,
+          `  Detail: ${c.detail}`,
+          ...(c.value ? [`  Value: ${c.value}`] : []),
+          `  Fix hint: ${c.fixHint}`,
+        ])
+      : ["(No failing or warning checks — review category summaries below.)"]
+
+  const categorySummaries = report.categories.map(
+    (cat) =>
+      `- ${cat.label}: ${cat.score}/100 (${cat.fail} fail, ${cat.warn} warn, ${cat.pass} pass)`
+  )
+
+  const lines = [
+    "You are an experienced SEO engineer. Use this site audit report to produce a concrete remediation plan.",
+    "",
+    "## Site",
+    `- Domain: ${report.domain}`,
+    `- URL audited: ${report.finalUrl}`,
+    drLine,
+    `- Overall audit score: ${report.score}/100`,
+    `- Checks: ${report.fail} fail, ${report.warn} warn, ${report.pass} pass`,
+    "",
+    "## Instructions",
+    "- Prioritize FAIL issues first, then WARN. Skip or briefly note PASS items.",
+    "- Give concrete code or config changes (e.g. robots.txt, meta tags, canonicals, HTTP headers, sitemap.xml, JSON-LD).",
+    "- Tie each recommendation to a finding in this report. Do not invent PageSpeed, Core Web Vitals, or other claims not present here.",
+    "- Prefer actionable snippets and file-level guidance over generic SEO advice.",
+    "",
+    "## Fix first (highest impact)",
+    ...fixFirst,
+    "",
+    "## Category summaries",
+    ...categorySummaries,
+  ]
+
+  return lines.filter((l) => l !== null).join("\n")
+}
+
 function CheckRow({ check }: { check: AuditCheck }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-2 py-3.5 border-b border-border/60 last:border-0">
@@ -152,6 +200,7 @@ export default function AuditClient({ query }: { query: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [promptCopied, setPromptCopied] = useState(false)
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({
     onpage: true,
     crawl: true,
@@ -213,6 +262,13 @@ export default function AuditClient({ query }: { query: string }) {
     await navigator.clipboard.writeText(reportToMarkdown(report))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const copyAiPrompt = async () => {
+    if (!report) return
+    await navigator.clipboard.writeText(reportToAiPrompt(report))
+    setPromptCopied(true)
+    setTimeout(() => setPromptCopied(false), 2000)
   }
 
   return (
@@ -279,7 +335,7 @@ export default function AuditClient({ query }: { query: string }) {
                   {new Date(report.auditedAt).toLocaleString()}
                 </p>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex flex-wrap gap-2 shrink-0">
                 <Button type="button" variant="outline" size="sm" onClick={copyReport}>
                   {copied ? (
                     <>
@@ -288,6 +344,22 @@ export default function AuditClient({ query }: { query: string }) {
                   ) : (
                     <>
                       <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy report
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void copyAiPrompt()}
+                >
+                  {promptCopied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" /> Prompt copied
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Fix with AI
                     </>
                   )}
                 </Button>
