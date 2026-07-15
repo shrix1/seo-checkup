@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { logToolUsage } from "@/lib/log-tool-usage"
 import Link from "next/link"
 
-const DEFAULT_SITE = "https://freetoolsfr.com"
+const DEFAULT_SITE = "https://shrix1.com"
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITE

@@ -20,7 +20,7 @@ import {
   sortSitemapStructure,
 } from "./generate-deep-routes"
 
-const DEFAULT_SITEMAP = "https://supwriter.com/sitemap.xml"
+const DEFAULT_SITEMAP = "https://shrix1.com/sitemap.xml"
 
 type SitemapSource = {
   sitemapUrl: string
