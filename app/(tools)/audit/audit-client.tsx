@@ -14,7 +14,12 @@ import Disclosure from "@/components/ui/disclosure"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Claude, Cursor, OpenAI } from "@lobehub/icons"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
-import type { AuditCheck, AuditReport } from "@/lib/audit/types"
+import type {
+  AuditCategoryId,
+  AuditCheck,
+  AuditReport,
+  CategoryScore,
+} from "@/lib/audit/types"
 import { cn } from "@/lib/utils"
 import {
   AlertTriangle,
@@ -23,7 +28,10 @@ import {
   Copy,
   ExternalLink,
   FileSearch,
+  Gauge,
   Globe2,
+  Info,
+  Loader2,
   MessageSquareQuote,
   RefreshCw,
   Shield,
@@ -31,6 +39,7 @@ import {
   TrendingUp,
   Wrench,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -46,15 +55,24 @@ function initialQuery(query: string) {
   }
 }
 
-const categoryIcon = {
+const categoryIcon: Record<AuditCategoryId, LucideIcon> = {
   onpage: FileSearch,
   crawl: Globe2,
   trust: Shield,
   ai: Bot,
   aeo: MessageSquareQuote,
-} as const
+  performance: Gauge,
+}
 
-function reportToMarkdown(report: AuditReport): string {
+/**
+ * `extra` carries the categories that arrive after the audit itself — right
+ * now just Core Web Vitals. They are appended rather than merged so the
+ * headline score in the export always matches the one on screen.
+ */
+function reportToMarkdown(
+  report: AuditReport,
+  extra: CategoryScore[] = []
+): string {
   const lines = [
     `# SEO Audit — ${report.domain}`,
     `Score: ${report.score}/100`,
@@ -71,7 +89,7 @@ function reportToMarkdown(report: AuditReport): string {
         `- [${c.status.toUpperCase()}] ${c.label}: ${c.detail}. Fix: ${c.fixHint}`
     ),
     "",
-    ...report.categories.flatMap((cat) => [
+    ...[...report.categories, ...extra].flatMap((cat) => [
       `## ${cat.label} (${cat.score}/100)`,
       ...cat.checks.map(
         (c) =>
@@ -88,14 +106,21 @@ function reportToMarkdown(report: AuditReport): string {
  * carries the vocabulary and the exact spec rules the model needs — otherwise
  * it invents plausible-sounding header names for the newer AEO conventions.
  */
-function reportToAiPrompt(report: AuditReport): string {
+function reportToAiPrompt(
+  report: AuditReport,
+  extra: CategoryScore[] = []
+): string {
   const drLine =
     typeof report.domainRating === "number"
       ? `- Domain Rating: ${Math.round(report.domainRating)}/100`
       : null
 
-  const findingsByCategory = report.categories.flatMap((cat) => {
-    const issues = cat.checks.filter((c) => c.status !== "pass")
+  const findingsByCategory = [...report.categories, ...extra].flatMap((cat) => {
+    // `info` findings are ungraded observations, not work — keep them out of
+    // the remediation list so the model does not invent fixes for them.
+    const issues = cat.checks.filter(
+      (c) => c.status === "fail" || c.status === "warn"
+    )
     if (issues.length === 0) {
       return [`### ${cat.label} — ${cat.score}/100`, "All checks pass.", ""]
     }
@@ -153,13 +178,16 @@ function reportToAiPrompt(report: AuditReport): string {
     `- Audit type: ${report.isHomepage ? "homepage" : "page-level (site-wide checks still ran against the origin)"}`,
     drLine,
     `- Overall score: ${report.score}/100`,
-    `- Checks: ${report.fail} fail, ${report.warn} warn, ${report.pass} pass`,
+    `- Checks: ${report.fail} fail, ${report.warn} warn, ${report.pass} pass${
+      report.info > 0 ? `, ${report.info} ungraded (reported, not scored)` : ""
+    }`,
     "",
     "## Instructions",
     "- Work in severity order: every FAIL first, then WARN. Do not restate passing checks.",
     "- Group your plan by the four disciplines above so it is clear what each fix buys.",
     "- Give concrete, copy-pasteable changes: robots.txt lines, meta tags, HTTP response headers, JSON-LD blocks, sitemap entries, framework config.",
-    "- Tie every recommendation to a specific finding below. Do not invent PageSpeed, Core Web Vitals, rankings, traffic or any metric not present here.",
+    "- Tie every recommendation to a specific finding below. Do not invent rankings, traffic or any metric not present here.",
+    "- Where Core Web Vitals appear, respect the label on each one. `field` means real Chrome telemetry and is the number Google ranks on; `lab simulation` is a single simulated run, useful for diagnosis only. Never present a lab number as the ranking signal, and never treat a missing metric as a good one.",
     "- Where a fix depends on the stack, say which layer it belongs in (CDN/edge, server middleware, framework config, template).",
     "- End with the three changes that would move the score most, and why.",
     "",
@@ -278,13 +306,48 @@ function ReportActions({
 }
 
 /**
+ * Counts up while a long job runs. PageSpeed Insights takes 15-40s, which is
+ * well past the point where a static spinner starts reading as "stuck" — a
+ * moving number is the cheapest way to show it is still working.
+ */
+function useElapsedSeconds(active: boolean): number {
+  const [seconds, setSeconds] = useState(0)
+
+  useEffect(() => {
+    if (!active) return
+    const startedAt = Date.now()
+    const id = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [active])
+
+  return active ? seconds : 0
+}
+
+/**
  * Per-category scores at a glance, so the shape of the problem is visible
  * without scrolling. Each ring jumps to its section.
  */
-function CategoryRings({ report }: { report: AuditReport }) {
+function CategoryRings({
+  report,
+  perf,
+  perfLoading,
+  perfFailed,
+  onRetryPerf,
+  elapsed,
+}: {
+  report: AuditReport
+  perf: CategoryScore | null
+  perfLoading: boolean
+  perfFailed: boolean
+  onRetryPerf: () => void
+  elapsed: number
+}) {
+  const cats = perf ? [...report.categories, perf] : report.categories
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {report.categories.map((cat) => {
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {cats.map((cat) => {
         const Icon = categoryIcon[cat.id]
         const band = scoreBand(cat.score)
         return (
@@ -301,11 +364,11 @@ function CategoryRings({ report }: { report: AuditReport }) {
             className="flex flex-col items-center gap-2 rounded-lg border bg-background px-3 py-4 text-center transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:border-border-strong hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ScoreRing value={cat.score} size={64} strokeWidth={5} suffix={null} />
-            <span className="flex items-center gap-1.5 text-xs font-medium leading-tight">
-              <Icon
-                className="h-3 w-3 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
+            {/* Between the score and the label, on its own line: inline with
+                the label it floated badly against the two- and three-line
+                category names. */}
+            <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+            <span className="text-xs font-medium leading-tight">
               {cat.label}
             </span>
             <span className="text-[0.6875rem] text-muted-foreground tabular">
@@ -321,6 +384,50 @@ function CategoryRings({ report }: { report: AuditReport }) {
           </a>
         )
       })}
+
+      {/* Holds the slot while PageSpeed Insights runs, so the grid does not
+          reflow under the cursor 20 seconds after the report appears. Mirrors
+          the real card's layout exactly so nothing shifts when it lands. */}
+      {perfLoading && (
+        <div
+          className="flex flex-col items-center gap-2 rounded-lg border border-dashed bg-background px-3 py-4 text-center"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <span className="grid h-16 w-16 place-items-center">
+            <Loader2
+              className="h-7 w-7 animate-spin text-primary"
+              aria-hidden
+            />
+          </span>
+          <Gauge className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <span className="text-xs font-medium leading-tight text-muted-foreground">
+            Speed (Core Web Vitals)
+          </span>
+          <span className="text-[0.6875rem] text-muted-foreground tabular">
+            measuring… {elapsed}s
+          </span>
+        </div>
+      )}
+
+      {perfFailed && (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed bg-background px-3 py-4 text-center">
+          <span className="grid h-16 w-16 place-items-center">
+            <Gauge className="h-7 w-7 text-muted-foreground/50" aria-hidden />
+          </span>
+          <Gauge className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <span className="text-xs font-medium leading-tight text-muted-foreground">
+            Speed (Core Web Vitals)
+          </span>
+          <button
+            type="button"
+            onClick={onRetryPerf}
+            className="rounded text-[0.6875rem] font-medium text-link underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            unavailable — retry
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -349,7 +456,12 @@ function CheckRow({ check }: { check: AuditCheck }) {
         )}
         {check.status !== "pass" && (
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-            <Wrench className="mt-px h-3 w-3 shrink-0" aria-hidden />
+            {/* An info finding has no fix — the hint is context, not work. */}
+            {check.status === "info" ? (
+              <Info className="mt-px h-3 w-3 shrink-0" aria-hidden />
+            ) : (
+              <Wrench className="mt-px h-3 w-3 shrink-0" aria-hidden />
+            )}
             <span>{check.fixHint}</span>
           </p>
         )}
@@ -391,6 +503,16 @@ export default function AuditClient({ query }: { query: string }) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [promptCopied, setPromptCopied] = useState(false)
+  /**
+   * Keyed by the URL it describes so "still measuring" is derived rather than
+   * set at the top of an effect — a stale result from a previous audit can
+   * never be shown against the current one.
+   */
+  const [perfResult, setPerfResult] = useState<{
+    url: string
+    category: CategoryScore | null
+  } | null>(null)
+  const [perfAttempt, setPerfAttempt] = useState(0)
   const hasFetched = useRef(false)
 
   const run = useCallback(async (url: string) => {
@@ -431,6 +553,39 @@ export default function AuditClient({ query }: { query: string }) {
     void run(initial)
   }, [initial, run])
 
+  /**
+   * PageSpeed Insights takes 15-30s, so it runs only once the report is on
+   * screen and the category drops in when it lands.
+   *
+   * It deliberately does not feed the headline score. Field data exists only
+   * for origins with enough Chrome traffic to be sampled, so folding it in
+   * would make two sites' scores mean different things depending on how
+   * popular they are.
+   */
+  useEffect(() => {
+    if (!report) return
+    const controller = new AbortController()
+    const url = report.pageUrl
+    ;(async () => {
+      try {
+        const res = await fetch(
+          `/api/pagespeed?q=${encodeURIComponent(url)}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+        setPerfResult({
+          url,
+          // No key, PSI down, or rate limited — the rest of the report stands
+          // on its own, so record the attempt and render nothing.
+          category: res.ok && data?.ok ? (data.category as CategoryScore) : null,
+        })
+      } catch {
+        if (!controller.signal.aborted) setPerfResult({ url, category: null })
+      }
+    })()
+    return () => controller.abort()
+  }, [report, perfAttempt])
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const next = value.trim() || DEFAULT_SITE
@@ -442,16 +597,34 @@ export default function AuditClient({ query }: { query: string }) {
     router.push(`/audit?q=${encodeURIComponent(next)}`)
   }
 
+  // Settled only when the stored result belongs to the report on screen.
+  const perfSettled = Boolean(report) && perfResult?.url === report?.pageUrl
+  const perf = perfSettled ? (perfResult?.category ?? null) : null
+  const perfLoading = Boolean(report) && !perfSettled
+  // Settled with nothing to show: PSI timed out, errored, or has no key.
+  // Saying so beats a spinner that quietly disappears after a minute.
+  const perfFailed = perfSettled && !perf
+  const retryPerf = () => {
+    setPerfResult(null)
+    setPerfAttempt((n) => n + 1)
+  }
+  const perfElapsed = useElapsedSeconds(perfLoading)
+  const extraCategories = useMemo(() => (perf ? [perf] : []), [perf])
+
   const copyReport = async () => {
     if (!report) return
-    await navigator.clipboard.writeText(reportToMarkdown(report))
+    await navigator.clipboard.writeText(
+      reportToMarkdown(report, extraCategories)
+    )
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const copyAiPrompt = async () => {
     if (!report) return
-    await navigator.clipboard.writeText(reportToAiPrompt(report))
+    await navigator.clipboard.writeText(
+      reportToAiPrompt(report, extraCategories)
+    )
     setPromptCopied(true)
     setTimeout(() => setPromptCopied(false), 2000)
   }
@@ -471,7 +644,7 @@ export default function AuditClient({ query }: { query: string }) {
         },
       })
     }
-    for (const cat of report.categories) {
+    for (const cat of perf ? [...report.categories, perf] : report.categories) {
       items.push({
         id: `audit-${cat.id}`,
         label: cat.label,
@@ -483,8 +656,11 @@ export default function AuditClient({ query }: { query: string }) {
               : undefined,
       })
     }
+    if (!perf && perfLoading) {
+      items.push({ id: "audit-performance-loading", label: "Speed (measuring…)" })
+    }
     return items
-  }, [report])
+  }, [report, perf, perfLoading])
 
   return (
     <Container width="reading" className="relative mt-10">
@@ -578,6 +754,25 @@ export default function AuditClient({ query }: { query: string }) {
                   <StatusChip status="fail" count={report.fail} />
                   <StatusChip status="warn" count={report.warn} />
                   <StatusChip status="pass" count={report.pass} />
+                  {report.info > 0 && (
+                    <StatusChip status="info" count={report.info} />
+                  )}
+                  {/* The report is already complete at this point — this says
+                      one more category is still on its way, so a reader does
+                      not take the summary as final and leave. */}
+                  {perfLoading && (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1 text-xs font-medium text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      <Loader2
+                        className="h-3.5 w-3.5 animate-spin text-primary"
+                        aria-hidden
+                      />
+                      Measuring speed
+                      <span className="tabular opacity-70">{perfElapsed}s</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Domain Rating — secondary */}
@@ -624,7 +819,14 @@ export default function AuditClient({ query }: { query: string }) {
               </div>
             </div>
 
-            <CategoryRings report={report} />
+            <CategoryRings
+              report={report}
+              perf={perf}
+              perfLoading={perfLoading}
+              perfFailed={perfFailed}
+              onRetryPerf={retryPerf}
+              elapsed={perfElapsed}
+            />
           </header>
 
           {report.fixFirst.length > 0 && (
@@ -646,7 +848,8 @@ export default function AuditClient({ query }: { query: string }) {
 
           <section className="space-y-3">
             <h2 className="text-subhead font-semibold">All checks</h2>
-            {report.categories.map((cat) => {
+            {(perf ? [...report.categories, perf] : report.categories).map(
+              (cat) => {
               const CatIcon = categoryIcon[cat.id]
               const catBand = scoreBand(cat.score)
               return (
@@ -684,6 +887,9 @@ export default function AuditClient({ query }: { query: string }) {
                         <StatusCount status="fail" count={cat.fail} />
                         <StatusCount status="warn" count={cat.warn} />
                         <StatusCount status="pass" count={cat.pass} />
+                        {cat.info > 0 && (
+                          <StatusCount status="info" count={cat.info} />
+                        )}
                       </span>
                     </span>
                   }
@@ -692,8 +898,85 @@ export default function AuditClient({ query }: { query: string }) {
                     <CheckRow key={check.id} check={check} />
                   ))}
                 </Disclosure>
-              )
-            })}
+                )
+              }
+            )}
+
+            {perfLoading && (
+              <div
+                id="audit-performance-loading"
+                className="scroll-mt-28 rounded-lg border border-dashed px-4 py-3.5"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <Gauge
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <span className="font-medium">Speed (Core Web Vitals)</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Loader2
+                      className="h-3.5 w-3.5 animate-spin text-primary"
+                      aria-hidden
+                    />
+                    <span className="tabular">{perfElapsed}s</span>
+                  </span>
+                </div>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  PageSpeed Insights is loading the page on a simulated device.
+                  This usually takes 15–30 seconds, and longer on a heavy page.
+                  Everything above is already final.
+                </p>
+
+                {/* One row per metric it will return, so the block keeps its
+                    height and the page does not jump when the data lands. */}
+                <div className="mt-4 space-y-3">
+                  {[
+                    "Largest Contentful Paint",
+                    "Interaction to Next Paint",
+                    "Cumulative Layout Shift",
+                    "Total Blocking Time",
+                  ].map((label) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+                      <span className="text-sm text-muted-foreground/70">
+                        {label}
+                      </span>
+                      <Skeleton className="ml-auto h-4 w-16" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {perfFailed && (
+              <div className="rounded-lg border border-dashed px-4 py-3.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <Gauge
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <span className="font-medium text-muted-foreground">
+                    Speed (Core Web Vitals)
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  PageSpeed Insights did not return in time. It is a separate
+                  Google service and is occasionally slow — every other check in
+                  this report is unaffected.
+                </p>
+                <button
+                  type="button"
+                  onClick={retryPerf}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded text-sm text-link underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                  Measure speed again
+                </button>
+              </div>
+            )}
           </section>
         </FadeIn>
       )}
