@@ -6,14 +6,16 @@ export type FeatureKey =
   | "sitemap"
   | "metadata"
   | "robots"
+  | "coreWebVitals"
 
 export type FeatureRoutes = {
   toolPath: string
   landingPath: string
-  blogSlug: string
+  /** Omitted until a guide exists — consumers must not link to a missing post. */
+  blogSlug?: string
   toolLabel: string
   landingLabel: string
-  blogLabel: string
+  blogLabel?: string
   appName: string
   description: string
 }
@@ -74,6 +76,17 @@ export const features: Record<FeatureKey, FeatureRoutes> = {
     appName: "Robots.txt Checker",
     description:
       "Fetch any public robots.txt and highlight User-agent, Allow, Disallow, and Sitemap directives so you can confirm crawl access without guessing.",
+  },
+  coreWebVitals: {
+    toolPath: "/core-web-vitals",
+    landingPath: "/core-web-vitals-checker",
+    blogSlug: "core-web-vitals-explained",
+    toolLabel: "Core Web Vitals",
+    blogLabel: "Core Web Vitals: field vs lab",
+    landingLabel: "Core Web Vitals Checker",
+    appName: "Core Web Vitals Checker",
+    description:
+      "Check Largest Contentful Paint, Interaction to Next Paint, and Cumulative Layout Shift for any URL. Real Chrome user data where it exists, clearly separated from lab simulation — free, no account.",
   },
 }
 

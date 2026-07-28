@@ -13,7 +13,7 @@ export const blogMetadata = {
   "free-website-seo-audit": {
     title: "How to Run a Free Website SEO Audit",
     description:
-      "Learn what a free technical SEO audit should check — robots.txt, XML sitemaps, meta tags, security headers, and Ahrefs Domain Rating — plus how to prioritize and fix issues fast.",
+      "What a free technical SEO audit should check — robots.txt, XML sitemaps, meta tags and security headers — and how to prioritise the fixes.",
     date: "2026-07-15",
     category: "Site Audit",
     readTime: "7 min read",
@@ -22,9 +22,9 @@ export const blogMetadata = {
     relatedLanding: { href: "/site-audit", label: "Website SEO Audit" },
   },
   "what-is-domain-rating": {
-    title: "What Is Domain Rating? (And How to Check It Free)",
+    title: "What Is Domain Rating (DR)?",
     description:
-      "Domain Rating (DR) explained in plain language: what the Ahrefs score measures, why it matters for SEO, and how to look up DR for any domain free without a paid subscription.",
+      "Domain Rating explained plainly: what the Ahrefs score measures, why it matters, and how to look it up for any domain free.",
     date: "2026-07-15",
     category: "Domain Rating",
     readTime: "6 min read",
@@ -39,9 +39,9 @@ export const blogMetadata = {
     },
   },
   "how-to-check-xml-sitemap": {
-    title: "How to Check an XML Sitemap (Including Indexes)",
+    title: "How to Check an XML Sitemap",
     description:
-      "Learn how to validate sitemap.xml and sitemap indexes, expand nested child sitemaps, spot missing URLs, and copy every page URL with a free XML sitemap checker.",
+      "Validate sitemap.xml and sitemap indexes, expand nested child sitemaps, spot missing URLs and copy every page URL for free.",
     date: "2026-07-15",
     category: "Sitemap",
     readTime: "6 min read",
@@ -53,9 +53,9 @@ export const blogMetadata = {
     relatedLanding: { href: "/sitemap-checker", label: "XML Sitemap Checker" },
   },
   "how-to-check-meta-tags": {
-    title: "How to Check Meta Tags and Social Previews",
+    title: "How to Check Meta Tags & Previews",
     description:
-      "Learn how to check title tags, meta descriptions, and Open Graph social previews before you publish so Google and social snippets look right — with a free meta tags checker.",
+      "Check title tags, meta descriptions and Open Graph previews before you publish, so search and social snippets both look right.",
     date: "2026-07-15",
     category: "Metadata",
     readTime: "5 min read",
@@ -67,9 +67,9 @@ export const blogMetadata = {
     relatedLanding: { href: "/meta-tags-checker", label: "Meta Tags Checker" },
   },
   "how-to-check-robots-txt": {
-    title: "How to Check robots.txt (Without Breaking Crawl Access)",
+    title: "How to Check robots.txt Safely",
     description:
-      "Learn where robots.txt lives, how to read User-agent, Allow, and Disallow rules, and how to confirm Sitemap directives — without accidentally blocking crawl access.",
+      "Read and test robots.txt properly: group matching, longest-match precedence, Allow beating Disallow, and the AI crawler rules that cost citations.",
     date: "2026-07-15",
     category: "Robots",
     readTime: "5 min read",
@@ -79,6 +79,23 @@ export const blogMetadata = {
       label: "Check robots.txt",
     },
     relatedLanding: { href: "/robots-txt-checker", label: "Robots.txt Checker" },
+  },
+  "core-web-vitals-explained": {
+    title: "Core Web Vitals: Field vs Lab Data",
+    description:
+      "LCP, INP and CLS explained, and why your speed tool's number may not be the one Google ranks on. Field and lab data can disagree by 50x.",
+    date: "2026-07-29",
+    category: "Performance",
+    readTime: "6 min read",
+    coverImage: "/blog/core-web-vitals.svg",
+    relatedTool: {
+      href: "/core-web-vitals?q=vercel.com",
+      label: "Check Core Web Vitals",
+    },
+    relatedLanding: {
+      href: "/core-web-vitals-checker",
+      label: "Core Web Vitals Checker",
+    },
   },
 } as const satisfies Record<string, BlogPostMeta>
 

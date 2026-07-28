@@ -12,11 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: features.sitemap.landingPath, priority: 0.9 },
     { path: features.metadata.landingPath, priority: 0.9 },
     { path: features.robots.landingPath, priority: 0.9 },
+    { path: features.coreWebVitals.landingPath, priority: 0.9 },
     { path: features.audit.toolPath, priority: 0.85 },
     { path: features.domainRating.toolPath, priority: 0.85 },
     { path: features.sitemap.toolPath, priority: 0.8 },
     { path: features.metadata.toolPath, priority: 0.8 },
     { path: features.robots.toolPath, priority: 0.8 },
+    { path: features.coreWebVitals.toolPath, priority: 0.8 },
     { path: "/learn", priority: 0.8 },
     { path: "/blog", priority: 0.75 },
   ]

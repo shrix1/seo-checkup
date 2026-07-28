@@ -10,6 +10,7 @@ const order: FeatureKey[] = [
   "sitemap",
   "metadata",
   "robots",
+  "coreWebVitals",
 ]
 
 const linkClass =
@@ -70,16 +71,17 @@ const Footer = () => {
                   SEO vs PSEO vs AEO vs GEO
                 </Link>
               </li>
-              {order.map((key) => (
-                <li key={key}>
-                  <Link
-                    href={blogPath(features[key].blogSlug)}
-                    className={linkClass}
-                  >
-                    {features[key].blogLabel}
-                  </Link>
-                </li>
-              ))}
+              {order.map((key) => {
+                const slug = features[key].blogSlug
+                if (!slug) return null
+                return (
+                  <li key={key}>
+                    <Link href={blogPath(slug)} className={linkClass}>
+                      {features[key].blogLabel}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
 

@@ -21,6 +21,7 @@ const navTools = [
   { label: "Sitemap", href: features.sitemap.toolPath },
   { label: "Meta Tags", href: features.metadata.toolPath },
   { label: "Robots", href: features.robots.toolPath },
+  { label: "Speed", href: features.coreWebVitals.toolPath },
 ] as const
 
 const Navbar = () => {

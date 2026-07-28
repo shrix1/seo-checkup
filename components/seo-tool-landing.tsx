@@ -25,11 +25,13 @@ type SeoToolLandingProps = {
   inputPlaceholder?: string
   ctaLabel?: string
   benefits: [string, string, string]
-  faqs: [SeoLandingFaq, SeoLandingFaq, SeoLandingFaq]
+  /** At least three — the FAQ block is a real ranking surface, not decoration. */
+  faqs: [SeoLandingFaq, SeoLandingFaq, SeoLandingFaq, ...SeoLandingFaq[]]
   related: SeoLandingRelated[]
   canonicalPath: string
   appName: string
-  blogHref: string
+  /** Omitted when a feature has no guide yet. */
+  blogHref?: string
   blogLabel?: string
 }
 
@@ -103,15 +105,17 @@ export default function SeoToolLanding({
               />
             </div>
 
-            <p className="mt-4 text-sm">
-              <Link
-                href={blogHref}
-                className="inline-flex items-center gap-1.5 text-link underline underline-offset-2"
-              >
-                {blogLabel}
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </p>
+            {blogHref && (
+              <p className="mt-4 text-sm">
+                <Link
+                  href={blogHref}
+                  className="inline-flex items-center gap-1.5 text-link underline underline-offset-2"
+                >
+                  {blogLabel}
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              </p>
+            )}
           </FadeIn>
         </Container>
       </section>

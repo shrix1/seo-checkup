@@ -23,9 +23,11 @@ export default function ToolRelatedLinks({ feature }: ToolRelatedLinksProps) {
         <Link href={f.landingPath} className={linkClass}>
           {f.landingLabel}
         </Link>
-        <Link href={blogPath(f.blogSlug)} className={linkClass}>
-          {f.blogLabel}
-        </Link>
+        {f.blogSlug && f.blogLabel && (
+          <Link href={blogPath(f.blogSlug)} className={linkClass}>
+            {f.blogLabel}
+          </Link>
+        )}
         <Link href="/" className={linkClass}>
           Home
         </Link>

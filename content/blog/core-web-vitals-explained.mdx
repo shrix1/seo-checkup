@@ -1,0 +1,63 @@
+# Core Web Vitals: Field Data vs Lab Data
+
+Most speed tools hand you one number and let you assume it means something. It usually doesn't — at least not the thing you think.
+
+There are two completely different kinds of performance data, they routinely disagree, and only one of them affects your rankings. If you don't know which one you're looking at, you can spend a week optimising something Google never measured.
+
+## The two kinds of number
+
+**Field data** comes from the [Chrome UX Report](https://developer.chrome.com/docs/crux) (CrUX). It is anonymised telemetry from real Chrome users who actually visited your page over the previous 28 days, reported at the 75th percentile — meaning 75% of visits were at least this fast. **This is the data Google uses as a ranking signal.**
+
+**Lab data** comes from Lighthouse. Google loads your page once, on a simulated mid-tier mobile device with a throttled connection, in a data centre. Nothing about it involves a real user.
+
+Field data only exists if enough people visit your site for Chrome to sample it. Below that threshold — which is most of the web — you get no field data at all, and every tool quietly falls back to lab numbers without telling you.
+
+## How far apart they get
+
+Here is a real measurement of `vercel.com`, taken with our [Core Web Vitals checker](/core-web-vitals):
+
+| Metric | Lab | Field | Verdict |
+|---|---|---|---|
+| Time to First Byte | 16 ms | 893 ms | 55× apart |
+
+The lab run hit a warm edge cache in a fast data centre. Real users hit cold caches from real networks on real devices. Both numbers are accurate. Only one of them describes your visitors.
+
+Report the lab number and you'd call that TTFB excellent. Google rates it *average*.
+
+## The three that count
+
+Only three metrics are Core Web Vitals. Everything else is diagnostic.
+
+**Largest Contentful Paint (LCP)** — how long until the biggest element finishes rendering. Good is **≤ 2.5 s**. Usually the hero image, the headline, or a web font.
+
+**Interaction to Next Paint (INP)** — how sluggish the page feels when someone taps or clicks. Good is **≤ 200 ms**. INP replaced First Input Delay because FID only measured the *first* interaction, which was almost always the easiest one.
+
+**Cumulative Layout Shift (CLS)** — how much the layout jumps while loading. Good is **≤ 0.1**. Caused by images without dimensions, ads and embeds injected after load, and fonts that swap and reflow the text.
+
+### INP cannot be simulated
+
+This one matters. LCP and CLS have lab equivalents. **INP does not** — it requires a real person actually interacting with the page. A lab run has nobody clicking anything.
+
+So when a tool shows you an INP score for a site with no field data, it is not measuring INP. It has substituted something else, usually Total Blocking Time, and relabelled it. TBT is a reasonable proxy and worth watching, but it is a different measurement. Our checker reports INP as **no data** in that case rather than pretending.
+
+## Fixing each one
+
+**LCP** — preload the hero image and any font it depends on. Serve images in AVIF or WebP at their displayed size, not the original upload. Cut render-blocking CSS. If your LCP element only appears after hydration, that is your problem.
+
+**INP** — break up long JavaScript tasks. Anything over 50 ms blocks the main thread and the interaction queues behind it. Defer non-critical work until after first paint, and keep event handlers cheap.
+
+**CLS** — set explicit `width` and `height` on every image and embed so the browser reserves space before the file loads. Reserve space for anything injected later — banners, cookie notices, ads. Use `font-display: optional` if font swapping is shifting your text.
+
+## What speed actually buys you
+
+Core Web Vitals are a real ranking signal, but a small one. Google has been consistent that relevance beats speed: a slow page that answers the question outranks a fast page that doesn't.
+
+Treat them as a tiebreaker and as a genuine user-experience concern, not as a growth strategy. If your page isn't crawlable or isn't relevant, no amount of LCP tuning will help.
+
+That is worth checking first — our [free site audit](/audit) covers crawl access, on-page signals, and AI crawler visibility alongside speed.
+
+## Measuring your own
+
+Open the [Core Web Vitals checker](/core-web-vitals), paste a URL, and pick mobile or desktop. Mobile is the default because Google indexes mobile-first.
+
+Every metric is labelled **Real users** or **Lab simulation**, so you always know which number you're reading — and whether it's the one Google is grading you on.

@@ -12,6 +12,7 @@ import {
   Bot,
   FileImage,
   FileSearch,
+  Gauge,
   Globe2,
   Shield,
   MessageSquareQuote,
@@ -67,6 +68,12 @@ const tools = [
     content: "Read crawl directives and confirm your sitemap is declared.",
     link: features.robots.landingPath,
   },
+  {
+    icon: Gauge,
+    title: "Core Web Vitals",
+    content: "LCP, INP and CLS — real user data where it exists, labelled.",
+    link: features.coreWebVitals.landingPath,
+  },
 ]
 
 /**
@@ -99,9 +106,9 @@ const categories = [
   {
     icon: Bot,
     label: "AI crawler access",
-    count: 3,
+    count: 5,
     items:
-      "Whether ChatGPT, Claude and Perplexity search crawlers can reach you, assistant fetch access, and your declared content-usage policy",
+      "Whether ChatGPT, Claude and Perplexity search crawlers can reach you, assistant fetch access, your content-usage policy, and any RSL or AIPREF licence you declare",
   },
   {
     icon: MessageSquareQuote,
@@ -148,7 +155,7 @@ export default function HomeHero() {
               Every technical SEO check, unlocked.
             </h1>
             <p className="mt-4 max-w-xl text-subhead text-muted-foreground">
-              Paste any URL — a homepage or a deep page — for 43 checks across
+              Paste any URL — a homepage or a deep page — for 45 checks across
               on-page signals, crawl access, security, AI crawler access, and
               how citable you are to answer engines.
             </p>
@@ -158,7 +165,7 @@ export default function HomeHero() {
             </div>
 
             <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              <li>43 checks</li>
+              <li>45 checks</li>
               <li aria-hidden>·</li>
               <li>No account</li>
               <li aria-hidden>·</li>

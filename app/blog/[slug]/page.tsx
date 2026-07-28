@@ -15,6 +15,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { ComponentType } from "react"
 
+import CoreWebVitalsExplained from "@/content/blog/core-web-vitals-explained.mdx"
 import FreeWebsiteSeoAudit from "@/content/blog/free-website-seo-audit.mdx"
 import HowToCheckMetaTags from "@/content/blog/how-to-check-meta-tags.mdx"
 import HowToCheckRobotsTxt from "@/content/blog/how-to-check-robots-txt.mdx"
@@ -27,6 +28,7 @@ const blogComponents: Record<BlogSlug, ComponentType> = {
   "how-to-check-xml-sitemap": HowToCheckXmlSitemap,
   "how-to-check-meta-tags": HowToCheckMetaTags,
   "how-to-check-robots-txt": HowToCheckRobotsTxt,
+  "core-web-vitals-explained": CoreWebVitalsExplained,
 }
 
 export function generateStaticParams() {
