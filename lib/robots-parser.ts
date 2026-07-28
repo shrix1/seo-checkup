@@ -44,8 +44,87 @@ export type RobotsParsed = {
   issues: RobotsIssue[]
   /** Content Signals from the `*` group, if the site declares them */
   contentSignals?: ContentSignals
+  /** RSL 1.0 `License:` URLs, in file order */
+  licenses: string[]
+  /** AIPREF `Content-Usage:` declarations, in file order */
+  contentUsage: AiPreferences[]
   /** true when the file has no groups at all (everything is allowed) */
   empty: boolean
+}
+
+/** The four AIPREF vocabulary categories (draft-ietf-aipref-vocab). */
+export const AIPREF_CATEGORIES = [
+  "bots",
+  "train-ai",
+  "ai-output",
+  "search",
+] as const
+
+export type AiPrefCategory = (typeof AIPREF_CATEGORIES)[number]
+
+export type AiPreferences = {
+  /**
+   * Path pattern the preference is scoped to. Undefined means it applies to
+   * every asset the group covers.
+   */
+  path?: string
+  prefs: Partial<Record<AiPrefCategory, boolean>>
+  raw: string
+}
+
+/**
+ * Parses an AIPREF `Content-Usage` value per draft-ietf-aipref-attach:
+ *
+ *   content-usage = [ path-pattern 1*WS ] usage-pref
+ *
+ * where `usage-pref` is an RFC 9651 dictionary of category=y|n. The path is
+ * optional and, when present, is the leading whitespace-delimited token — it
+ * never contains `=`, which is what distinguishes it from the dictionary.
+ */
+function parseContentUsage(value: string): {
+  parsed: AiPreferences
+  unknown: string[]
+  badValues: string[]
+} {
+  const trimmed = value.trim()
+  const firstSpace = trimmed.search(/\s/)
+  let path: string | undefined
+  let dict = trimmed
+
+  if (firstSpace !== -1) {
+    const head = trimmed.slice(0, firstSpace)
+    if (!head.includes("=")) {
+      path = head
+      dict = trimmed.slice(firstSpace + 1).trim()
+    }
+  }
+
+  const prefs: AiPreferences["prefs"] = {}
+  const unknown: string[] = []
+  const badValues: string[] = []
+
+  for (const part of dict.split(",")) {
+    const entry = part.trim()
+    if (!entry) continue
+    const eq = entry.indexOf("=")
+    if (eq === -1) {
+      unknown.push(entry)
+      continue
+    }
+    const key = entry.slice(0, eq).trim().toLowerCase()
+    const raw = entry.slice(eq + 1).trim().toLowerCase()
+    if (!(AIPREF_CATEGORIES as readonly string[]).includes(key)) {
+      unknown.push(key)
+      continue
+    }
+    if (raw !== "y" && raw !== "n") {
+      badValues.push(`${key}=${raw}`)
+      continue
+    }
+    prefs[key as AiPrefCategory] = raw === "y"
+  }
+
+  return { parsed: { path, prefs, raw: trimmed }, unknown, badValues }
 }
 
 const KNOWN_DIRECTIVES = new Set([
@@ -62,6 +141,12 @@ const KNOWN_DIRECTIVES = new Set([
   // Cloudflare's Content Signals Policy: declares permitted *uses* of content
   // that a crawler is otherwise allowed to fetch.
   "content-signal",
+  // RSL 1.0 (rslstandard.org): points at an XML document carrying licensing
+  // and compensation terms. Real sites ship this — medium.com does.
+  "license",
+  // AIPREF (draft-ietf-aipref-attach, Standards Track): expresses AI usage
+  // preferences as an RFC 9651 dictionary, optionally scoped to a path.
+  "content-usage",
 ])
 
 export type ContentSignals = {
@@ -86,10 +171,30 @@ function parseContentSignal(value: string): ContentSignals {
   return signals
 }
 
+/**
+ * RFC 9309 requires robots.txt to be served as plain text. Plenty of hosts
+ * answer the path with an HTML challenge or error page anyway — askubuntu.com
+ * does — and parsing that line by line yields thousands of meaningless
+ * "unknown directive" warnings. Detect it so callers can report "no robots.txt"
+ * instead of pretending the markup was a rule set.
+ */
+export function looksLikeMarkup(body: string): boolean {
+  const head = body.slice(0, 2000).trimStart().toLowerCase()
+  if (!head) return false
+  return (
+    head.startsWith("<!doctype") ||
+    head.startsWith("<html") ||
+    head.startsWith("<?xml") ||
+    /<(html|head|body|script|title|div)[\s>]/.test(head)
+  )
+}
+
 export function parseRobots(text: string): RobotsParsed {
   const groups: RobotsGroup[] = []
   const sitemaps: string[] = []
   const issues: RobotsIssue[] = []
+  const licenses: string[] = []
+  const contentUsage: AiPreferences[] = []
 
   let current: RobotsGroup | null = null
   // A group accepts more agents only until its first rule appears.
@@ -247,6 +352,59 @@ export function parseRobots(text: string): RobotsParsed {
       return
     }
 
+    if (field === "license") {
+      if (!value) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: "License directive has no URL",
+          raw: rawLine.trim(),
+        })
+        return
+      }
+      if (!/^https?:\/\//i.test(value)) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: "License must be an absolute URL to an RSL document",
+          raw: rawLine.trim(),
+        })
+      }
+      if (!licenses.includes(value)) licenses.push(value)
+      return
+    }
+
+    if (field === "content-usage") {
+      if (!value) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: "Content-Usage has no preferences",
+          raw: rawLine.trim(),
+        })
+        return
+      }
+      const { parsed, unknown, badValues } = parseContentUsage(value)
+      for (const key of unknown) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: `Content-Usage category "${key}" is not in the AIPREF vocabulary (bots, train-ai, ai-output, search)`,
+          raw: rawLine.trim(),
+        })
+      }
+      for (const pair of badValues) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: `Content-Usage "${pair}" must be y or n`,
+          raw: rawLine.trim(),
+        })
+      }
+      if (Object.keys(parsed.prefs).length > 0) contentUsage.push(parsed)
+      return
+    }
+
     if (field === "noindex") {
       issues.push({
         level: "warning",
@@ -264,6 +422,8 @@ export function parseRobots(text: string): RobotsParsed {
     issues,
     contentSignals: groups.find((g) => g.agents.some((a) => a.trim() === "*"))
       ?.contentSignals,
+    licenses,
+    contentUsage,
     empty: groups.length === 0,
   }
 }

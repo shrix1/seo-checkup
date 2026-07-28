@@ -13,7 +13,9 @@ import {
   type CrawlerPurpose,
 } from "@/lib/ai-crawlers"
 import {
+  AIPREF_CATEGORIES,
   matchRobots,
+  type AiPrefCategory,
   type RobotsParsed,
   type RobotsIssue,
 } from "@/lib/robots-parser"
@@ -28,7 +30,14 @@ import {
   OpenAI,
   Perplexity,
 } from "@lobehub/icons"
-import { AlertTriangle, Ban, Check, Search } from "lucide-react"
+import {
+  AlertTriangle,
+  Ban,
+  Check,
+  ExternalLink,
+  Scale,
+  Search,
+} from "lucide-react"
 import type { ComponentType } from "react"
 import { useMemo, useState } from "react"
 
@@ -433,6 +442,112 @@ export function RobotsIssues({
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+/** Plain-language gloss for each AIPREF category. */
+const AIPREF_LABELS: Record<AiPrefCategory, string> = {
+  bots: "Automated processing",
+  "train-ai": "Model training",
+  "ai-output": "Use in AI output",
+  search: "Search indexing",
+}
+
+/**
+ * Reuse terms, as distinct from crawl access. Allow/Disallow decides whether a
+ * bot may fetch the page at all; these two declare what it may do with the
+ * bytes once it has them — so a site can be fully crawlable and still withhold
+ * training rights.
+ */
+export function ContentLicensing({
+  parsed,
+  id,
+}: {
+  parsed: RobotsParsed
+  id?: string
+}) {
+  const { licenses, contentUsage } = parsed
+  if (licenses.length === 0 && contentUsage.length === 0) return null
+
+  return (
+    <section id={id} className="scroll-mt-28">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-subhead font-semibold">Content licensing</h2>
+        <Badge variant="secondary">
+          <Scale className="mr-1 h-3 w-3" aria-hidden />
+          {licenses.length > 0 && contentUsage.length > 0
+            ? "RSL + AIPREF"
+            : licenses.length > 0
+              ? "RSL"
+              : "AIPREF"}
+        </Badge>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Crawl access says whether a bot may fetch this site. These declare what
+        it may do with the content afterwards.
+      </p>
+
+      {licenses.length > 0 && (
+        <div className="mt-4">
+          <p className="text-label font-medium uppercase text-muted-foreground">
+            RSL license documents
+          </p>
+          <ul className="mt-2 divide-y rounded-lg border">
+            {licenses.map((href) => (
+              <li
+                key={href}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+              >
+                <span className="min-w-0 break-all font-mono text-sm">
+                  {href}
+                </span>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs text-link underline underline-offset-2"
+                >
+                  Open <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {contentUsage.length > 0 && (
+        <div className="mt-4">
+          <p className="text-label font-medium uppercase text-muted-foreground">
+            AI usage preferences
+          </p>
+          <ul className="mt-2 divide-y rounded-lg border">
+            {contentUsage.map((usage, i) => (
+              <li key={`${usage.raw}-${i}`} className="px-4 py-3">
+                {usage.path && (
+                  <p className="mb-2 font-mono text-xs text-muted-foreground">
+                    Scoped to {usage.path}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {AIPREF_CATEGORIES.filter(
+                    (cat) => usage.prefs[cat] !== undefined
+                  ).map((cat) => (
+                    <span key={cat} className="inline-flex items-center gap-1.5">
+                      {usage.prefs[cat] ? (
+                        <Check className="h-3.5 w-3.5 text-success" aria-hidden />
+                      ) : (
+                        <Ban className="h-3.5 w-3.5 text-danger" aria-hidden />
+                      )}
+                      <span className="text-sm">{AIPREF_LABELS[cat]}</span>
+                    </span>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

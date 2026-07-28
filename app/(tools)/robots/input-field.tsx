@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   AiCrawlerMatrix,
+  ContentLicensing,
   RobotsGroups,
   RobotsIssues,
   RobotsUrlTester,
@@ -24,7 +25,8 @@ import {
 
 const DEFAULT_ROBOTS = "shrix1.com/robots.txt"
 
-const DIRECTIVE = /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host)\s*:/i
+const DIRECTIVE =
+  /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host|License|Content-Signal|Content-Usage)\s*:/i
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_ROBOTS
@@ -32,6 +34,24 @@ function initialQuery(query: string) {
     return decodeURIComponent(query)
   } catch {
     return query
+  }
+}
+
+/**
+ * People type "example.com" far more often than "example.com/robots.txt".
+ * Fill the path in when it is missing, but never overwrite an explicit one —
+ * some sites serve their rules from a rewritten path behind a proxy.
+ */
+function toRobotsUrl(input: string): string {
+  const withScheme = ensureHttpScheme(input.trim())
+  try {
+    const url = new URL(withScheme)
+    if (url.pathname === "/" || url.pathname === "") {
+      url.pathname = "/robots.txt"
+    }
+    return url.toString()
+  } catch {
+    return withScheme
   }
 }
 
@@ -100,6 +120,9 @@ const InputFieldRobots = ({ query }: { query: string }) => {
     if (parsed.sitemaps.length > 0) {
       items.push({ id: "robots-sitemaps", label: "Sitemaps declared" })
     }
+    if (parsed.licenses.length > 0 || parsed.contentUsage.length > 0) {
+      items.push({ id: "robots-licensing", label: "Content licensing" })
+    }
     if (parsed.groups.length > 0) {
       items.push({ id: "robots-groups", label: "Rule groups" })
     }
@@ -128,7 +151,9 @@ const InputFieldRobots = ({ query }: { query: string }) => {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch(`/api/v1?q=${encodeURIComponent(url)}&tool=ROBOTS`)
+      const res = await fetch(
+        `/api/v1?q=${encodeURIComponent(toRobotsUrl(url))}&tool=ROBOTS`
+      )
       const json = await res.json()
 
       if (res.status === 429 || json.error === "Rate limit exceeded") {
@@ -143,7 +168,13 @@ const InputFieldRobots = ({ query }: { query: string }) => {
       }
 
       if (!res.ok || typeof json !== "string") {
-        setError(`Could not load robots.txt from ${url}`)
+        // The API distinguishes "unreachable" from "reachable but not a
+        // robots.txt" — the second is far more actionable, so pass it through.
+        setError(
+          typeof json?.error === "string"
+            ? `${json.error} (${url})`
+            : `Could not load robots.txt from ${url}`
+        )
         setBody(null)
         return
       }
@@ -248,6 +279,8 @@ const InputFieldRobots = ({ query }: { query: string }) => {
                 </ul>
               </section>
             )}
+
+            <ContentLicensing parsed={parsed} id="robots-licensing" />
 
             <RobotsGroups parsed={parsed} id="robots-groups" />
 

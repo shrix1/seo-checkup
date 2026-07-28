@@ -5,6 +5,7 @@ import getRatelimit from "@/lib/rate-limit"
 import { safeFetch } from "@/lib/safe-fetch"
 import { assertPublicHttpUrl } from "@/lib/safe-url"
 import { ensureHttpScheme } from "@/lib/fetch-url"
+import { looksLikeMarkup } from "@/lib/robots-parser"
 
 const rateLimit = getRatelimit(20, "24 h")
 
@@ -62,11 +63,26 @@ export async function GET(req: Request) {
       )
     }
 
+    const text = data.body.toString("utf8")
+
+    // A host that answers /robots.txt with an HTML challenge or error page has
+    // no usable robots.txt. Say so, rather than handing markup to the parser.
+    if (tool === "ROBOTS" && looksLikeMarkup(text)) {
+      return NextResponse.json(
+        {
+          error:
+            "That URL returned an HTML page, not a plain-text robots.txt",
+          status: data.status,
+        },
+        { status: 502 }
+      )
+    }
+
     if (logType) {
       void postDiscordLogs(url, logType)
     }
 
-    return NextResponse.json(data.body.toString("utf8"))
+    return NextResponse.json(text)
   } catch (error) {
     console.error("Error fetching data:", error)
     return NextResponse.json({ error: "Error fetching data" }, { status: 500 })
