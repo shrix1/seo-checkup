@@ -118,7 +118,7 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   className={linkClass}
                 >
-                  X / Twitter
+                  X
                 </Link>
               </li>
             </ul>

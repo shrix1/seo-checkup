@@ -2,7 +2,8 @@
 
 import { features } from "@/lib/site"
 import { cn } from "@/lib/utils"
-import { Flame, Github, Menu, Twitter, X } from "lucide-react"
+import { Flame, Github, Menu, X } from "lucide-react"
+import { XIcon } from "./icons"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import React, { useState } from "react"
@@ -111,7 +112,7 @@ const Navbar = () => {
             aria-label="SeoCheckup on X"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
           >
-            <Twitter className="h-[18px] w-[18px]" aria-hidden />
+            <XIcon size={16} />
           </Link>
 
           <Link
