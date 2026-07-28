@@ -10,6 +10,7 @@ import { useId, useState, type ReactNode } from "react"
  * one behaviour without pulling in another Radix package.
  */
 export default function Disclosure({
+  id: anchorId,
   trigger,
   children,
   defaultOpen = false,
@@ -17,6 +18,8 @@ export default function Disclosure({
   triggerClassName,
   contentClassName,
 }: {
+  /** Optional anchor id, so a table of contents can scroll to this block */
+  id?: string
   trigger: ReactNode
   children: ReactNode
   defaultOpen?: boolean
@@ -28,7 +31,10 @@ export default function Disclosure({
   const id = useId()
 
   return (
-    <div className={cn("overflow-hidden rounded-lg border", className)}>
+    <div
+      id={anchorId}
+      className={cn("overflow-hidden rounded-lg border", className)}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

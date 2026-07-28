@@ -8,7 +8,9 @@ import ToolSearchForm, {
 } from "@/components/tool-search-form"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TocRail, type TocItem } from "@/components/toc"
 import { parseRobots } from "@/lib/robots-parser"
+import { ensureHttpScheme } from "@/lib/utils"
 import { Check, Copy, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -20,7 +22,7 @@ import {
   RobotsUrlTester,
 } from "./robots-analysis"
 
-const DEFAULT_ROBOTS = "https://shrix1.com/robots.txt"
+const DEFAULT_ROBOTS = "shrix1.com/robots.txt"
 
 const DIRECTIVE = /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host)\s*:/i
 
@@ -84,11 +86,39 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   const parsed = useMemo(() => parseRobots(body ?? ""), [body])
   const origin = useMemo(() => {
     try {
-      return new URL(initial).origin
+      return new URL(ensureHttpScheme(initial)).origin
     } catch {
       return ""
     }
   }, [initial])
+
+  const tocItems = useMemo<TocItem[]>(() => {
+    const items: TocItem[] = [
+      { id: "robots-tester", label: "Test a URL" },
+      { id: "robots-crawlers", label: "Crawler access" },
+    ]
+    if (parsed.sitemaps.length > 0) {
+      items.push({ id: "robots-sitemaps", label: "Sitemaps declared" })
+    }
+    if (parsed.groups.length > 0) {
+      items.push({ id: "robots-groups", label: "Rule groups" })
+    }
+    items.push({
+      id: "robots-syntax",
+      label: "Syntax",
+      badge:
+        parsed.issues.length > 0
+          ? {
+              text: String(parsed.issues.length),
+              tone: parsed.issues.some((i) => i.level === "error")
+                ? "danger"
+                : "warning",
+            }
+          : undefined,
+    })
+    items.push({ id: "robots-raw", label: "Raw file" })
+    return items
+  }, [parsed])
 
   const fetchRobots = useCallback(async (url: string) => {
     if (!url) {
@@ -151,7 +181,9 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   }
 
   return (
-    <Container width="reading" className="mt-10">
+    <Container width="reading" className="relative mt-10">
+      {body !== null && !loading && <TocRail items={tocItems} />}
+
       <ToolSearchForm
         value={value}
         onChange={setValue}
@@ -187,12 +219,12 @@ const InputFieldRobots = ({ query }: { query: string }) => {
       ) : (
         body !== null && (
           <FadeIn className="mt-10 space-y-10">
-            <RobotsUrlTester parsed={parsed} origin={origin} />
+            <RobotsUrlTester parsed={parsed} origin={origin} id="robots-tester" />
 
-            <AiCrawlerMatrix parsed={parsed} />
+            <AiCrawlerMatrix parsed={parsed} id="robots-crawlers" />
 
             {parsed.sitemaps.length > 0 && (
-              <section>
+              <section id="robots-sitemaps" className="scroll-mt-28">
                 <h2 className="text-subhead font-semibold">
                   Sitemaps declared
                 </h2>
@@ -217,11 +249,11 @@ const InputFieldRobots = ({ query }: { query: string }) => {
               </section>
             )}
 
-            <RobotsGroups parsed={parsed} />
+            <RobotsGroups parsed={parsed} id="robots-groups" />
 
-            <RobotsIssues issues={parsed.issues} />
+            <RobotsIssues issues={parsed.issues} id="robots-syntax" />
 
-            <section>
+            <section id="robots-raw" className="scroll-mt-28">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-subhead font-semibold">Raw file</h2>
                 <Button

@@ -257,13 +257,19 @@ function inventoryGroups(parsed: ParsedHtml): { title: string; rows: TagRow[] }[
   ]
 }
 
-export function TagInventory({ parsed }: { parsed: ParsedHtml }) {
+export function TagInventory({
+  parsed,
+  id,
+}: {
+  parsed: ParsedHtml
+  id?: string
+}) {
   const groups = useMemo(() => inventoryGroups(parsed), [parsed])
   const all = groups.flatMap((g) => g.rows)
   const found = all.filter((r) => r.value).length
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-subhead font-semibold">Tags found</h2>
         <Badge variant="outline">
@@ -317,7 +323,13 @@ export function TagInventory({ parsed }: { parsed: ParsedHtml }) {
 
 /* ─────────────────────────────── Issues ─────────────────────────────── */
 
-export function MetadataIssues({ parsed }: { parsed: ParsedHtml }) {
+export function MetadataIssues({
+  parsed,
+  id,
+}: {
+  parsed: ParsedHtml
+  id?: string
+}) {
   const issues = useMemo(() => {
     const out: { status: CheckStatus; label: string; detail: string }[] = []
     const title = measureSnippet("title", parsed.title)
@@ -382,7 +394,7 @@ export function MetadataIssues({ parsed }: { parsed: ParsedHtml }) {
 
   if (issues.length === 0) {
     return (
-      <section>
+      <section id={id} className="scroll-mt-28">
         <h2 className="text-subhead font-semibold">Issues</h2>
         <p className="mt-3 rounded-lg border bg-success-subtle px-4 py-3 text-sm text-success">
           Nothing to fix — every tag checked is present and within limits.
@@ -392,7 +404,7 @@ export function MetadataIssues({ parsed }: { parsed: ParsedHtml }) {
   }
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-subhead font-semibold">Issues</h2>
         <Badge variant={issues.some((i) => i.status === "fail") ? "danger" : "warning"}>

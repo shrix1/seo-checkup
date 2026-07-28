@@ -18,8 +18,35 @@ import {
   type RobotsIssue,
 } from "@/lib/robots-parser"
 import { cn } from "@/lib/utils"
+import {
+  Anthropic,
+  Apple,
+  ByteDance,
+  Google,
+  Meta,
+  Microsoft,
+  OpenAI,
+  Perplexity,
+} from "@lobehub/icons"
 import { AlertTriangle, Ban, Check, Search } from "lucide-react"
+import type { ComponentType } from "react"
 import { useMemo, useState } from "react"
+
+/**
+ * Monochrome brand marks only — they inherit currentColor, so the matrix stays
+ * on the design system instead of turning into a wall of vendor colours.
+ * Vendors without a mark (DuckDuckGo, Amazon, Common Crawl) just show no icon.
+ */
+const VENDOR_ICON: Record<string, ComponentType<{ size?: number }>> = {
+  OpenAI,
+  Anthropic,
+  Perplexity,
+  Google,
+  Microsoft,
+  Apple,
+  Meta,
+  ByteDance,
+}
 
 /* ────────────────────────────── URL tester ────────────────────────────── */
 
@@ -30,9 +57,11 @@ import { useMemo, useState } from "react"
 export function RobotsUrlTester({
   parsed,
   origin,
+  id,
 }: {
   parsed: RobotsParsed
   origin: string
+  id?: string
 }) {
   const [path, setPath] = useState("/")
   const [agent, setAgent] = useState("Googlebot")
@@ -43,7 +72,7 @@ export function RobotsUrlTester({
   )
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <h2 className="text-subhead font-semibold">Test a URL</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Check whether a specific crawler may fetch a path, and see which rule
@@ -146,6 +175,7 @@ function CrawlerRow({
   crawler: Crawler
   allowed: boolean
 }) {
+  const VendorIcon = VENDOR_ICON[crawler.vendor]
   return (
     <div className="flex items-start gap-3 py-2.5">
       <span
@@ -162,9 +192,14 @@ function CrawlerRow({
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2">
+        <div className="flex flex-wrap items-center gap-x-2">
           <span className="font-mono text-sm">{crawler.name}</span>
-          <span className="text-xs text-muted-foreground">{crawler.vendor}</span>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            {VendorIcon && (
+              <VendorIcon size={12} aria-hidden />
+            )}
+            {crawler.vendor}
+          </span>
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {allowed ? crawler.impact : `Blocked — losing: ${crawler.impact}`}
@@ -185,9 +220,11 @@ function CrawlerRow({
 export function AiCrawlerMatrix({
   parsed,
   path = "/",
+  id,
 }: {
   parsed: RobotsParsed
   path?: string
+  id?: string
 }) {
   const results = useMemo(
     () =>
@@ -211,7 +248,7 @@ export function AiCrawlerMatrix({
   const blockedSearch = byPurpose.search.filter((r) => !r.allowed).length
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-subhead font-semibold">Crawler access</h2>
         {blockedSearch > 0 ? (
@@ -276,11 +313,17 @@ export function AiCrawlerMatrix({
 
 /* ──────────────────────────── Groups & issues ──────────────────────────── */
 
-export function RobotsGroups({ parsed }: { parsed: RobotsParsed }) {
+export function RobotsGroups({
+  parsed,
+  id,
+}: {
+  parsed: RobotsParsed
+  id?: string
+}) {
   if (parsed.groups.length === 0) return null
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <h2 className="text-subhead font-semibold">Rule groups</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {parsed.groups.length} group
@@ -342,10 +385,16 @@ export function RobotsGroups({ parsed }: { parsed: RobotsParsed }) {
   )
 }
 
-export function RobotsIssues({ issues }: { issues: RobotsIssue[] }) {
+export function RobotsIssues({
+  issues,
+  id,
+}: {
+  issues: RobotsIssue[]
+  id?: string
+}) {
   if (issues.length === 0) {
     return (
-      <section>
+      <section id={id} className="scroll-mt-28">
         <h2 className="text-subhead font-semibold">Syntax</h2>
         <p className="mt-3 flex items-center gap-2 rounded-lg border bg-success-subtle px-4 py-3 text-sm text-success">
           <Check className="h-4 w-4 shrink-0" aria-hidden />
@@ -358,7 +407,7 @@ export function RobotsIssues({ issues }: { issues: RobotsIssue[] }) {
   const errors = issues.filter((i) => i.level === "error").length
 
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-subhead font-semibold">Syntax</h2>
         <Badge variant={errors > 0 ? "danger" : "warning"}>

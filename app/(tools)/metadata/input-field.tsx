@@ -2,6 +2,7 @@
 
 import Container from "@/components/container"
 import { FadeIn } from "@/components/motion"
+import { TocRail, type TocItem } from "@/components/toc"
 import ToolSearchForm, {
   ToolError,
   ToolExample,
@@ -9,7 +10,7 @@ import ToolSearchForm, {
 import { Skeleton } from "@/components/ui/skeleton"
 import { parseHtml, type ParsedHtml } from "@/lib/audit/parse-html"
 import { SNIPPET_LIMITS, truncateToWidth } from "@/lib/serp-width"
-import { cn } from "@/lib/utils"
+import { cn, ensureHttpScheme } from "@/lib/utils"
 import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -22,7 +23,7 @@ import {
   useImageDimensions,
 } from "./metadata-analysis"
 
-const DEFAULT_SITE = "https://shrix1.com"
+const DEFAULT_SITE = "shrix1.com"
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITE
@@ -91,9 +92,12 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
         return
       }
 
+      // Resolve against an absolute URL so relative og:image paths work even
+      // when the user typed a bare domain.
+      const absolute = ensureHttpScheme(target)
       // Same parser the audit uses, so the two tools can never disagree.
-      setParsed(parseHtml(jsonData, target))
-      setUrl(target)
+      setParsed(parseHtml(jsonData, absolute))
+      setUrl(absolute)
     } catch (err) {
       console.error("Error fetching metadata:", err)
       setError(`Could not read meta tags from ${target}`)
@@ -125,8 +129,26 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
   const title = parsed?.title || ""
   const description = parsed?.description || ""
 
+  const tocItems = useMemo<TocItem[]>(() => {
+    if (!parsed) return []
+    return [
+      { id: "meta-snippet", label: "Snippet width" },
+      { id: "meta-issues", label: "Issues" },
+      { id: "meta-google", label: "Google" },
+      { id: "meta-x", label: "X (Twitter)" },
+      { id: "meta-slack", label: "Slack" },
+      { id: "meta-linkedin", label: "LinkedIn" },
+      { id: "meta-discord", label: "Discord" },
+      { id: "meta-facebook", label: "Facebook" },
+      { id: "meta-image", label: "Preview image" },
+      { id: "meta-tags", label: "Tags found" },
+    ]
+  }, [parsed])
+
   return (
-    <Container width="reading" className="mt-10">
+    <Container width="reading" className="relative mt-10">
+      {parsed && !loading && <TocRail items={tocItems} />}
+
       <ToolSearchForm
         value={value}
         onChange={setValue}
@@ -167,7 +189,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
       {parsed && !loading && (
         <FadeIn className="mt-10 space-y-10">
           {/* Snippet width — the thing that actually decides truncation */}
-          <section>
+          <section id="meta-snippet" className="scroll-mt-28">
             <h2 className="text-subhead font-semibold">Search snippet width</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Google truncates by rendered pixels, not characters. The marker
@@ -179,10 +201,10 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </section>
 
-          <MetadataIssues parsed={parsed} />
+          <MetadataIssues parsed={parsed} id="meta-issues" />
 
           {/* Google — rendered with real pixel truncation */}
-          <Preview title="Google">
+          <Preview id="meta-google" title="Google">
             <div className="p-4">
               <p className="truncate text-xs text-muted-foreground">{host}</p>
               <h3 className="mt-1 text-lg text-[#1a0dab] dark:text-[#8ab4f8]">
@@ -206,7 +228,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <Preview title="X (Twitter)">
+          <Preview id="meta-x" title="X (Twitter)">
             <div className="p-4">
               <div className="relative overflow-hidden rounded-xl border">
                 <PreviewImage src={ogImage} alt={title} />
@@ -218,7 +240,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <Preview title="Slack">
+          <Preview id="meta-slack" title="Slack">
             <div className="p-4">
               <div className="border-l-[3px] border-l-border-strong pl-3">
                 <p className="truncate text-sm text-muted-foreground">{host}</p>
@@ -233,7 +255,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <Preview title="LinkedIn">
+          <Preview id="meta-linkedin" title="LinkedIn">
             <div className="p-4">
               <div className="overflow-hidden rounded-lg border">
                 <PreviewImage src={ogImage} alt={title} />
@@ -247,7 +269,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <Preview title="Discord">
+          <Preview id="meta-discord" title="Discord">
             <div className="p-4">
               <div className="rounded-md border-l-4 border-l-border-strong bg-surface-2 p-3">
                 <h3 className="line-clamp-1 text-sm font-medium text-[#0068e0] dark:text-[#00a8fc]">
@@ -263,7 +285,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <Preview title="Facebook">
+          <Preview id="meta-facebook" title="Facebook">
             <div className="p-4">
               <div className="overflow-hidden rounded-lg border">
                 <PreviewImage src={ogImage} alt={title} />
@@ -282,7 +304,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </Preview>
 
-          <section>
+          <section id="meta-image" className="scroll-mt-28">
             <h2 className="text-subhead font-semibold">Preview image</h2>
             <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
               {ogImage || "No og:image declared"}
@@ -292,7 +314,7 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
             </div>
           </section>
 
-          <TagInventory parsed={parsed} />
+          <TagInventory parsed={parsed} id="meta-tags" />
         </FadeIn>
       )}
     </Container>
@@ -302,14 +324,16 @@ const InputFieldMetadata = ({ query }: { query: string }) => {
 export default InputFieldMetadata
 
 function Preview({
+  id,
   title,
   children,
 }: {
+  id?: string
   title: string
   children: React.ReactNode
 }) {
   return (
-    <section>
+    <section id={id} className="scroll-mt-28">
       <h2 className="text-label font-medium uppercase text-muted-foreground">
         {title}
       </h2>
