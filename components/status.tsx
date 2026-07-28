@@ -1,11 +1,12 @@
 import type { CheckStatus } from "@/lib/audit/types"
 import { cn } from "@/lib/utils"
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react"
 
 /**
  * Single source of truth for pass / warn / fail presentation.
  * The status triad is the only place saturated colour is allowed —
- * the brand accent never uses these tokens.
+ * the brand accent never uses these tokens. `info` stays deliberately
+ * neutral so an ungraded finding never reads as a result.
  */
 const tones = {
   pass: {
@@ -31,6 +32,14 @@ const tones = {
     ring: "ring-danger/25",
     Icon: XCircle,
     label: "Fail",
+  },
+  info: {
+    text: "text-muted-foreground",
+    bg: "bg-surface-2",
+    dot: "bg-muted-foreground",
+    ring: "ring-border-strong",
+    Icon: Info,
+    label: "Info",
   },
 } as const
 
