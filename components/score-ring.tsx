@@ -1,8 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { motion, useReducedMotion } from "framer-motion"
-import { easeOut } from "@/components/motion"
+import { useReducedMotion } from "framer-motion"
+import { useEffect, useState } from "react"
 
 const bands = [
   {
@@ -39,6 +39,13 @@ export function scoreBand(value: number) {
   return bands.find((b) => value >= b.min) ?? bands[bands.length - 1]
 }
 
+/**
+ * The sweep is a plain CSS transition on stroke-dashoffset rather than a
+ * motion library animation. Several rings render at once in a report, and
+ * animating an SVG presentation attribute through framer-motion left them
+ * frozen partway — the arc then showed a score that was simply wrong. A CSS
+ * transition always lands on its final value even if it is interrupted.
+ */
 export default function ScoreRing({
   value,
   size = 128,
@@ -53,12 +60,21 @@ export default function ScoreRing({
   className?: string
 }) {
   const reduceMotion = useReducedMotion()
+  const [swept, setSwept] = useState(false)
+
+  useEffect(() => {
+    // Paint the empty track first, then transition on the next frame.
+    const id = requestAnimationFrame(() => setSwept(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const safe = typeof value === "number" ? Math.max(0, Math.min(100, value)) : 0
   const band = scoreBand(safe)
 
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const offset = circumference * (1 - safe / 100)
+  const target = circumference * (1 - safe / 100)
+  const settled = reduceMotion || swept
 
   const numberSize = Math.round(size * 0.28)
 
@@ -89,24 +105,21 @@ export default function ScoreRing({
           className="stroke-border"
         />
         {typeof value === "number" && (
-          <motion.circle
+          <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             fill="none"
             strokeWidth={strokeWidth}
             strokeLinecap="round"
-            strokeDasharray={circumference}
             className={band.stroke}
-            initial={
-              reduceMotion
-                ? { strokeDashoffset: offset }
-                : { strokeDashoffset: circumference }
-            }
-            animate={{ strokeDashoffset: offset }}
-            transition={
-              reduceMotion ? { duration: 0 } : { duration: 0.8, ease: easeOut }
-            }
+            style={{
+              strokeDasharray: circumference,
+              strokeDashoffset: settled ? target : circumference,
+              transition: reduceMotion
+                ? undefined
+                : "stroke-dashoffset 800ms var(--ease-out)",
+            }}
           />
         )}
       </svg>
