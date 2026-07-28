@@ -21,6 +21,13 @@ let warned = false
 const redis = configured ? new Redis({ url: url!, token: token! }) : null
 
 /**
+ * The shared Upstash client, or null when the env vars are absent. Exported so
+ * other modules can cache against the same connection instead of opening their
+ * own — callers must handle the null case and degrade without it.
+ */
+export const redisClient = redis
+
+/**
  * Rate limiter backed by Upstash.
  *
  * When the Upstash env vars are absent — a fresh clone or local dev without an

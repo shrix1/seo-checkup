@@ -15,16 +15,40 @@
  */
 
 import type { AuditCheck, CategoryScore, CheckStatus } from "@/lib/audit/types"
+import { redisClient } from "@/lib/rate-limit"
 
 const ENDPOINT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
-/** PSI regularly takes 15-30s, so give it real headroom. */
-const TIMEOUT_MS = 60_000
+/**
+ * PSI usually answers in 15-40s but regularly exceeds a minute on a heavy
+ * page. The route allows 90s, so leave ~8s for the response to serialise and
+ * spend the rest waiting — a 60s cap was throwing away a third of the budget
+ * and turning slow-but-fine measurements into timeouts.
+ */
+const TIMEOUT_MS = 82_000
+
+/**
+ * Field data comes from a 28-day rolling window and lab runs are noisy enough
+ * that re-running within an hour tells you nothing new. Caching removes the
+ * wait entirely on repeat lookups, keeps popular URLs off the 25k/day quota,
+ * and means one slow PSI response is not paid for twice.
+ */
+const CACHE_TTL_SECONDS = 60 * 60 * 6
+
+function cacheKey(url: string, strategy: PageSpeedStrategy): string {
+  return `psi:v1:${strategy}:${url}`
+}
 
 export type PageSpeedStrategy = "mobile" | "desktop"
 
 export type PageSpeedResult =
-  | { ok: true; category: CategoryScore; strategy: PageSpeedStrategy }
+  | {
+      ok: true
+      category: CategoryScore
+      strategy: PageSpeedStrategy
+      /** True when served from cache, so the caller can say so. */
+      cached?: boolean
+    }
   | { ok: false; reason: "unconfigured" | "error"; message: string }
 
 /**
@@ -150,8 +174,8 @@ export async function fetchPageSpeed(
   url: string,
   strategy: PageSpeedStrategy = "mobile"
 ): Promise<PageSpeedResult> {
-  const key = process.env.PAGESPEED_API_KEY
-  if (!key) {
+  const apiKey = process.env.PAGESPEED_API_KEY
+  if (!apiKey) {
     return {
       ok: false,
       reason: "unconfigured",
@@ -160,11 +184,23 @@ export async function fetchPageSpeed(
     }
   }
 
+  // Cache lookups must never break the measurement, so any Redis problem is
+  // swallowed and treated as a miss.
+  const cache = cacheKey(url, strategy)
+  if (redisClient) {
+    try {
+      const hit = await redisClient.get<CategoryScore>(cache)
+      if (hit) return { ok: true, strategy, category: hit, cached: true }
+    } catch {
+      /* fall through to a live measurement */
+    }
+  }
+
   const endpoint = new URL(ENDPOINT)
   endpoint.searchParams.set("url", url)
   endpoint.searchParams.set("category", "performance")
   endpoint.searchParams.set("strategy", strategy)
-  endpoint.searchParams.set("key", key)
+  endpoint.searchParams.set("key", apiKey)
 
   let payload: PageSpeedJson
   try {
@@ -194,17 +230,22 @@ export async function fetchPageSpeed(
 
   const checks = buildChecks(payload, strategy)
   const stats = scoreCategory(checks)
-
-  return {
-    ok: true,
-    strategy,
-    category: {
-      id: "performance",
-      label: "Speed (Core Web Vitals)",
-      ...stats,
-      checks,
-    },
+  const category: CategoryScore = {
+    id: "performance",
+    label: "Speed (Core Web Vitals)",
+    ...stats,
+    checks,
   }
+
+  if (redisClient) {
+    try {
+      await redisClient.set(cache, category, { ex: CACHE_TTL_SECONDS })
+    } catch {
+      /* a measurement we cannot cache is still a measurement */
+    }
+  }
+
+  return { ok: true, strategy, category }
 }
 
 function buildChecks(
