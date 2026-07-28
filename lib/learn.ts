@@ -107,14 +107,17 @@ export const LEARN_SECTIONS: LearnSection[] = [
     actions: [
       "Server-render the main content. Everything else here is wasted if the body only exists after hydration.",
       "Serve a Markdown twin and advertise it with a Link: rel=\"alternate\" header and Vary: Accept.",
-      "Publish /llms.txt as an index, and /llms-full.txt if you have documentation worth ingesting whole.",
       "Phrase section headings as questions, answer in the first paragraph beneath, and give each heading a stable id so an answer can deep-link to the passage.",
       "Put an accurate dateModified in your schema. Most AI citations go to pages updated within the past year.",
+      "Optionally publish /llms.txt as an index. Be realistic about it: adoption is around 10% of sites, AI crawlers request the file in roughly 0.1% of their visits, and Google has said it will not support it. Useful as a single entry point for documentation, not as a ranking tactic.",
     ],
     links: [
       { label: "Audit your AEO readiness", href: features.audit.toolPath },
       { label: "Check AI crawler access", href: features.robots.toolPath },
-      { label: "How to run a free SEO audit", href: blogPath(features.audit.blogSlug) },
+      {
+        label: "How to run a free SEO audit",
+        href: blogPath("free-website-seo-audit"),
+      },
     ],
   },
   {

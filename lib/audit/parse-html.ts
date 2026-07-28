@@ -85,6 +85,8 @@ export type ParsedHtml = {
   jsonLdHasAuthor: boolean
   /** <link rel="alternate" type="text/markdown"> — AEO twin discovery */
   markdownAlternate?: string
+  /** <link rel="license"> — RSL document discovery */
+  licenseHref?: string
 }
 
 const EMPTY_PARSED: ParsedHtml = {
@@ -171,6 +173,7 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
   let canonical: string | undefined
   let favicon: string | undefined
   let markdownAlternate: string | undefined
+  let licenseHref: string | undefined
   const hreflang: HreflangEntry[] = []
 
   for (const tag of linkTags) {
@@ -189,6 +192,11 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
 
     if (relParts.includes("canonical") && !canonical) {
       canonical = decodeEntities(href.trim())
+    }
+
+    // RSL 1.0 discovery mechanism 3: <link rel="license" type="application/rsl+xml">
+    if (relParts.includes("license") && !licenseHref) {
+      licenseHref = decodeEntities(href.trim())
     }
     if (
       !favicon &&
@@ -381,6 +389,7 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
       Boolean(metaTags["author"]) ||
       Boolean(metaTags["article:author"]),
     markdownAlternate,
+    licenseHref,
   }
 }
 

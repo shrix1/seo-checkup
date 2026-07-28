@@ -9,7 +9,8 @@ import {
 import { expandSitemap } from "@/lib/sitemap-expand"
 import { parseHtml, parseSitemapLines } from "@/lib/audit/parse-html"
 import { sameRegistrableHost } from "@/lib/safe-url"
-import { matchRobots, parseRobots } from "@/lib/robots-parser"
+import { looksLikeMarkup, matchRobots, parseRobots } from "@/lib/robots-parser"
+import { discoverRslUrl, parseRsl } from "@/lib/rsl"
 import { AI_CRAWLERS, CITATION_CRAWLERS } from "@/lib/ai-crawlers"
 import {
   CONFORMANCE_LABELS,
@@ -82,13 +83,22 @@ function scoreFromChecks(checks: AuditCheck[]): {
   pass: number
   warn: number
   fail: number
+  info: number
 } {
   let pass = 0
   let warn = 0
   let fail = 0
+  let info = 0
   let points = 0
   let max = 0
   for (const c of checks) {
+    // `info` findings never move the score in either direction, so they must
+    // not raise `max` either — otherwise reporting one would silently cap the
+    // achievable score below 100.
+    if (c.status === "info") {
+      info += 1
+      continue
+    }
     max += 2
     if (c.status === "pass") {
       pass += 1
@@ -105,11 +115,13 @@ function scoreFromChecks(checks: AuditCheck[]): {
     pass,
     warn,
     fail,
+    info,
   }
 }
 
+/** Sort key: worst first, with ungraded `info` findings last. */
 function statusOrder(status: CheckStatus): number {
-  return status === "fail" ? 0 : status === "warn" ? 1 : 2
+  return status === "fail" ? 0 : status === "warn" ? 1 : status === "pass" ? 2 : 3
 }
 
 /** Compare URLs ignoring trailing-slash and hash noise. */
@@ -177,7 +189,25 @@ export async function runAudit(input: string): Promise<AuditReport> {
   ])
 
   const parsed = pageRes.ok ? parseHtml(pageRes.body, pageUrl) : parseHtml("")
-  const robotsParsed = parseRobots(robotsRes.ok ? robotsRes.body : "")
+
+  // A 200 that returns markup is a challenge or error page, not a rule set.
+  // Treat it as no robots.txt so the crawl checks do not grade against HTML.
+  const robotsUsable = robotsRes.ok && !looksLikeMarkup(robotsRes.body)
+  const robotsParsed = parseRobots(robotsUsable ? robotsRes.body : "")
+
+  // The RSL document URL is only known once robots.txt and the page have been
+  // read, so this is a second, conditional round trip rather than part of the
+  // fan-out above. Nothing else depends on it.
+  const rslSource = discoverRslUrl({
+    robotsLicenses: robotsParsed.licenses,
+    linkHeader: pageRes.headers.get("link"),
+    htmlLicenseHref: parsed.licenseHref,
+    baseUrl: pageUrl,
+  })
+  const rslRes = rslSource
+    ? await fetchUrl(rslSource.url, { maxBytes: 64_000 })
+    : null
+  const rslDoc = rslRes?.ok ? parseRsl(rslRes.body) : null
   const checks: AuditCheck[] = []
 
   // ─────────────────────────────── On-page ───────────────────────────────
@@ -493,13 +523,17 @@ export async function runAudit(input: string): Promise<AuditReport> {
     id: "robots",
     category: "crawl",
     label: "robots.txt reachable",
-    status: robotsRes.ok ? "pass" : "fail",
-    value: robotsRes.ok
+    status: robotsUsable ? "pass" : "fail",
+    value: robotsUsable
       ? `${robotsRes.status}`
-      : robotsRes.error || `HTTP ${robotsRes.status}`,
-    detail: robotsRes.ok
+      : robotsRes.ok
+        ? `HTTP ${robotsRes.status} — HTML, not text/plain`
+        : robotsRes.error || `HTTP ${robotsRes.status}`,
+    detail: robotsUsable
       ? "robots.txt returned successfully"
-      : "Could not fetch robots.txt",
+      : robotsRes.ok
+        ? "That path returned an HTML page. RFC 9309 requires plain text, so crawlers treat this as having no robots.txt."
+        : "Could not fetch robots.txt",
     fixHint: "Publish a robots.txt at the site root.",
     deepLink: robotsDeep,
   })
@@ -520,7 +554,7 @@ export async function runAudit(input: string): Promise<AuditReport> {
     deepLink: robotsDeep,
   })
 
-  const sitemapFromRobots = robotsRes.ok ? parseSitemapLines(robotsRes.body) : []
+  const sitemapFromRobots = robotsUsable ? parseSitemapLines(robotsRes.body) : []
   checks.push({
     id: "robots-sitemap",
     category: "crawl",
@@ -910,6 +944,75 @@ export async function runAudit(input: string): Promise<AuditReport> {
     deepLink: robotsDeep,
   })
 
+  // ── Machine-readable licensing: RSL 1.0 and AIPREF ──
+  // Both are opt-in policy statements, not best practices, so neither absence
+  // is a failure. What is gradeable is whether a declaration that exists is
+  // actually well-formed — a broken licence is worse than none, because the
+  // publisher believes they are protected.
+  const rslSummary = rslDoc?.contents[0]?.licenses[0]
+  const rslPermits = rslSummary?.permits.flatMap((p) => p.values) ?? []
+  const rslProhibits = rslSummary?.prohibits.flatMap((p) => p.values) ?? []
+  checks.push({
+    id: "rsl-license",
+    category: "ai",
+    label: "Content licence (RSL)",
+    status: !rslSource
+      ? "info"
+      : !rslRes?.ok
+        ? "fail"
+        : rslDoc?.valid
+          ? "pass"
+          : "warn",
+    value: !rslSource
+      ? "(none declared)"
+      : !rslRes?.ok
+        ? `${rslSource.url} — ${rslRes?.error || `HTTP ${rslRes?.status}`}`
+        : [
+            rslSource.url,
+            rslPermits.length ? `permits ${rslPermits.join(", ")}` : null,
+            rslProhibits.length ? `prohibits ${rslProhibits.join(", ")}` : null,
+            rslSummary?.paymentType ? `payment ${rslSummary.paymentType}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+    detail: !rslSource
+      ? "No RSL licence declared. Optional — it states machine-readable terms for AI reuse and, where you want it, compensation."
+      : !rslRes?.ok
+        ? `The licence is advertised via ${rslSource.via} but the document could not be fetched, so no crawler can read your terms`
+        : rslDoc?.valid
+          ? `Valid RSL document, found via ${rslSource.via}`
+          : `RSL document has ${rslDoc?.issues.length} spec problem${rslDoc?.issues.length === 1 ? "" : "s"}: ${rslDoc?.issues.slice(0, 2).join("; ")}`,
+    fixHint: !rslSource
+      ? "Publish an RSL document and point at it with a License: line in robots.txt. Only worth it if you intend to license or restrict AI reuse."
+      : "Serve the document at the advertised URL with the https://rslstandard.org/rsl namespace, a url on every <content>, at least one <license>, and only the tokens the spec defines.",
+    deepLink: robotsDeep,
+  })
+
+  const aipref = robotsParsed.contentUsage
+  const aiprefSummary = aipref
+    .flatMap((u) =>
+      Object.entries(u.prefs).map(
+        ([k, v]) => `${k}=${v ? "y" : "n"}${u.path ? ` (${u.path})` : ""}`
+      )
+    )
+    .join(", ")
+  checks.push({
+    id: "aipref",
+    category: "ai",
+    label: "AI usage preferences (AIPREF)",
+    // The IETF attachment draft is Standards Track but not yet an RFC, so
+    // absence cannot fairly be graded against anyone.
+    status: aipref.length > 0 ? "pass" : "info",
+    value: aipref.length > 0 ? aiprefSummary : "(none declared)",
+    detail:
+      aipref.length > 0
+        ? "Content-Usage states your AI preferences in the IETF's vocabulary, which is heading for a standard"
+        : "No Content-Usage directive. Cloudflare's Content-Signal covers similar ground and has wider deployment today.",
+    fixHint:
+      'Add Content-Usage to robots.txt using the AIPREF vocabulary — bots, train-ai, ai-output and search, each y or n. For example "Content-Usage: train-ai=n, search=y". A path may prefix it to scope the rule.',
+    deepLink: robotsDeep,
+  })
+
   // ────────────────────── Answer engines (AEO / GEO) ──────────────────────
 
   // Markdown twin — a clean Markdown copy of the page for answer engines.
@@ -1010,15 +1113,19 @@ export async function runAudit(input: string): Promise<AuditReport> {
     id: "llms-txt",
     category: "aeo",
     label: "llms.txt",
-    status: llmsRes.ok ? "pass" : "warn",
+    // Reported, never graded. Measured crawler traffic to the file is around
+    // 0.1% of AI bot requests, and Google has said on the record it will not
+    // support it — so neither publishing nor omitting it is a defensible
+    // score. Scoring it either way would be inventing a signal.
+    status: "info",
     value: llmsRes.ok
       ? [`${llmsUrl} (${llmsRes.status})`, ...llmsExtras].join(" · ")
       : "(not found)",
     detail: llmsRes.ok
-      ? `llms.txt is published${llmsExtras.length ? `, alongside ${llmsExtras.join(" and ")}` : " — consider llms-full.txt for the full text too"}`
-      : "No llms.txt at the site root. robots.txt grants access; llms.txt tells engines what is worth reading.",
+      ? `llms.txt is published${llmsExtras.length ? `, alongside ${llmsExtras.join(" and ")}` : ""}`
+      : "No llms.txt at the site root",
     fixHint:
-      "Publish /llms.txt listing your key pages, and /llms-full.txt with their full Markdown text for docs-heavy sites.",
+      "Optional, and unscored here. Adoption sits near 10% of sites but AI crawlers rarely fetch it, and Google has declined to support it. Worth publishing for docs-heavy sites that want one canonical entry point; not worth it as an SEO tactic. Serving real content without JavaScript matters far more.",
   })
 
   // The single biggest AEO blocker: most answer engines do not execute JS.
@@ -1056,7 +1163,7 @@ export async function runAudit(input: string): Promise<AuditReport> {
         ? "Schema tells answer engines what kind of question this page can answer"
         : "No FAQPage, HowTo, QAPage or Article schema — engines have to infer what this page is",
     fixHint:
-      "Add FAQPage or HowTo schema to pages that answer questions, and Article to editorial pages.",
+      "Add Article to editorial pages and HowTo to step-by-step guides. FAQPage still helps answer engines parse a Q&A block, but Google retired FAQ rich results on 7 May 2026 — it no longer earns a search feature on its own.",
   })
 
   const questionHeadings = parsed.headings.filter(
@@ -1169,8 +1276,9 @@ export async function runAudit(input: string): Promise<AuditReport> {
   })
 
   const overall = scoreFromChecks(checks)
+  // Only graded failures belong here — `info` has nothing to fix.
   const fixFirst = [...checks]
-    .filter((c) => c.status !== "pass")
+    .filter((c) => c.status === "fail" || c.status === "warn")
     .sort((a, b) => statusOrder(a.status) - statusOrder(b.status))
 
   return {
@@ -1185,6 +1293,7 @@ export async function runAudit(input: string): Promise<AuditReport> {
     pass: overall.pass,
     warn: overall.warn,
     fail: overall.fail,
+    info: overall.info,
     categories,
     fixFirst,
     domainRating: drRes.domainRating,
