@@ -25,9 +25,11 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <body className="font-sans">
+        {/* Light by default. enableSystem stays on so the switcher can still
+            offer System, but a first visit is not left to the OS setting. */}
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
