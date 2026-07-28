@@ -12,10 +12,11 @@ import { absoluteUrl, features } from "@/lib/site"
 const feature = features.audit
 
 export const metadata: Metadata = constructMetadata({
-  title: "Free Website SEO Audit | SeoCheckup",
-  description: feature.description,
+  title: "Run a Site Audit — 45 Free Checks | SeoCheckup",
+  description:
+    "Paste one URL for 45 technical SEO checks: on-page signals, crawl access, security headers, AI crawler access and answer-engine readiness.",
   canonical: feature.toolPath,
-  ogImage: "/og-dark.png",
+  ogImage: "/og/og-site-audit.svg",
 })
 
 export const revalidate = 0

@@ -5,9 +5,9 @@ import { constructMetadata } from "@/lib/utils"
 import { Metadata } from "next/types"
 
 export const metadata: Metadata = constructMetadata({
-  title: "SEO Blog — Audits, Sitemaps & Meta Guides | SeoCheckup",
+  title: "SEO Blog — Guides & Audits | SeoCheckup",
   description:
-    "Practical SEO guides from SeoCheckup: how to run a free site audit, check Domain Rating, validate XML sitemaps, preview meta tags, and read robots.txt without breaking crawl access.",
+    "Practical technical SEO guides on site audits, XML sitemaps, meta tags, robots.txt and Core Web Vitals — written to be acted on, not skimmed.",
   canonical: "/blog",
 })
 

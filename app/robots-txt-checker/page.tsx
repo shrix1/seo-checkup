@@ -8,8 +8,9 @@ const feature = features.robots
 export const metadata: Metadata = constructMetadata({
   title: "Free Robots.txt Checker | SeoCheckup",
   description:
-    "Check any public robots.txt free. Highlight User-agent, Allow, Disallow, and Sitemap directives so you can confirm crawl rules and avoid blocking important pages by mistake.",
+    "Fetch any public robots.txt and check User-agent, Allow, Disallow and Sitemap directives so you can confirm crawl access without guessing.",
   canonical: feature.landingPath,
+  ogImage: "/og/og-robots.svg",
 })
 
 export default function RobotsTxtCheckerPage() {
@@ -22,7 +23,7 @@ export default function RobotsTxtCheckerPage() {
       inputPlaceholder="https://example.com/robots.txt"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
-      blogHref={blogPath(feature.blogSlug)}
+      blogHref={feature.blogSlug ? blogPath(feature.blogSlug) : undefined}
       blogLabel={feature.blogLabel}
       benefits={[
         "Load robots.txt from any public site URL",

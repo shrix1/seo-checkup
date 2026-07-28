@@ -8,8 +8,9 @@ const feature = features.domainRating
 export const metadata: Metadata = constructMetadata({
   title: "Free Domain Rating Checker | SeoCheckup",
   description:
-    "Check Domain Rating (DR) for any website free using Ahrefs’ public Domain Rating data. See an instant authority score with required Domain Rating by Ahrefs attribution — no API key.",
+    "Check Domain Rating (DR) for any website free using Ahrefs' public data. Instant authority score with the required Ahrefs attribution, no API key.",
   canonical: feature.landingPath,
+  ogImage: "/og/og-domain-rating.svg",
 })
 
 export default function DomainRatingCheckerPage() {
@@ -22,7 +23,7 @@ export default function DomainRatingCheckerPage() {
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
-      blogHref={blogPath(feature.blogSlug)}
+      blogHref={feature.blogSlug ? blogPath(feature.blogSlug) : undefined}
       blogLabel={feature.blogLabel}
       benefits={[
         "Instant DR score from Ahrefs’ free public endpoint",

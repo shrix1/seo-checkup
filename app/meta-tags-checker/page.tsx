@@ -8,8 +8,9 @@ const feature = features.metadata
 export const metadata: Metadata = constructMetadata({
   title: "Free Meta Tags Checker | SeoCheckup",
   description:
-    "Check website meta tags free: preview title and description as search engines may show them, plus Open Graph social cards, so snippets look right before you publish.",
+    "Preview a page's title, meta description and Open Graph tags before you publish. Free meta tags checker for search snippets and social cards.",
   canonical: feature.landingPath,
+  ogImage: "/og/og-metadata.svg",
 })
 
 export default function MetaTagsCheckerPage() {
@@ -22,7 +23,7 @@ export default function MetaTagsCheckerPage() {
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
-      blogHref={blogPath(feature.blogSlug)}
+      blogHref={feature.blogSlug ? blogPath(feature.blogSlug) : undefined}
       blogLabel={feature.blogLabel}
       benefits={[
         "See title and meta description as search engines may show them",

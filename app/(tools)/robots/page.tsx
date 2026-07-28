@@ -12,10 +12,11 @@ import { absoluteUrl, features } from "@/lib/site"
 const feature = features.robots
 
 export const metadata: Metadata = constructMetadata({
-  title: "Free Robots.txt Checker | SeoCheckup",
-  description: feature.description,
+  title: "View & Test robots.txt — Free Tool | SeoCheckup",
+  description:
+    "Fetch and test any robots.txt against RFC 9309. Check crawler access per path, inspect AI crawlers, and read declared RSL and AIPREF licensing.",
   canonical: feature.toolPath,
-  ogImage: "/og-dark.png",
+  ogImage: "/og/og-robots.svg",
 })
 
 export const revalidate = 0

@@ -12,10 +12,11 @@ import { absoluteUrl, features } from "@/lib/site"
 const feature = features.sitemap
 
 export const metadata: Metadata = constructMetadata({
-  title: "Free XML Sitemap Checker | SeoCheckup",
-  description: feature.description,
+  title: "Expand an XML Sitemap — Free Tool | SeoCheckup",
+  description:
+    "Paste a sitemap URL to expand nested indexes, list every page URL and filter by source. Finds the sitemap for you if you only have a domain.",
   canonical: feature.toolPath,
-  ogImage: "/og-dark.png",
+  ogImage: "/og/og-sitemap.svg",
 })
 
 export const revalidate = 0

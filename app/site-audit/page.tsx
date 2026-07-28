@@ -8,8 +8,9 @@ const feature = features.audit
 export const metadata: Metadata = constructMetadata({
   title: "Free Website SEO Audit Tool | SeoCheckup",
   description:
-    "Run a free website SEO audit without an account: robots.txt, expandable XML sitemaps, on-page meta tags, security headers, and Ahrefs Domain Rating in one prioritized report.",
+    "Run a free website SEO audit with no account: robots.txt, XML sitemaps, on-page meta tags, security headers and Domain Rating in one report.",
   canonical: feature.landingPath,
+  ogImage: "/og/og-site-audit.svg",
 })
 
 export default function SiteAuditLandingPage() {
@@ -22,7 +23,7 @@ export default function SiteAuditLandingPage() {
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
-      blogHref={blogPath(feature.blogSlug)}
+      blogHref={feature.blogSlug ? blogPath(feature.blogSlug) : undefined}
       blogLabel={feature.blogLabel}
       benefits={[
         "On-page checks: title, description, H1, canonical, OG, JSON-LD",

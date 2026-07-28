@@ -12,10 +12,11 @@ import { absoluteUrl, features } from "@/lib/site"
 const feature = features.metadata
 
 export const metadata: Metadata = constructMetadata({
-  title: "Free Meta Tags Checker | SeoCheckup",
-  description: feature.description,
+  title: "Preview Meta Tags & Social Cards | SeoCheckup",
+  description:
+    "See how any URL renders in Google, X, Slack, LinkedIn, Discord and Facebook, with title and description measured in real pixel width.",
   canonical: feature.toolPath,
-  ogImage: "/og-dark.png",
+  ogImage: "/og/og-metadata.svg",
 })
 
 export const revalidate = 0

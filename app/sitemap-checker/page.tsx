@@ -8,8 +8,9 @@ const feature = features.sitemap
 export const metadata: Metadata = constructMetadata({
   title: "Free XML Sitemap Checker | SeoCheckup",
   description:
-    "Validate and expand XML sitemaps and sitemap indexes free. Follow child sitemaps automatically, list every page URL, filter by source file, and copy the full URL list in one click.",
+    "Paste a sitemap.xml or index URL to expand child sitemaps, list every page URL, filter by source and copy the full list. Free XML sitemap checker.",
   canonical: feature.landingPath,
+  ogImage: "/og/og-sitemap.svg",
 })
 
 export default function SitemapCheckerPage() {
@@ -22,7 +23,7 @@ export default function SitemapCheckerPage() {
       inputPlaceholder="https://example.com/sitemap.xml"
       canonicalPath={feature.landingPath}
       appName={feature.appName}
-      blogHref={blogPath(feature.blogSlug)}
+      blogHref={feature.blogSlug ? blogPath(feature.blogSlug) : undefined}
       blogLabel={feature.blogLabel}
       benefits={[
         "Follows sitemap indexes into child sitemaps automatically",

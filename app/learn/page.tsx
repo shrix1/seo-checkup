@@ -13,9 +13,9 @@ import Link from "next/link"
 const CANONICAL = "/learn"
 
 export const metadata: Metadata = constructMetadata({
-  title: "SEO vs PSEO vs AEO vs GEO — What Each One Means | SeoCheckup",
+  title: "SEO vs PSEO vs AEO vs GEO | SeoCheckup",
   description:
-    "Plain-language guide to SEO, programmatic SEO, answer engine optimization and generative engine optimization: what each one is, what actually changed, and what to fix first.",
+    "What SEO, programmatic SEO, answer engine optimization and generative engine optimization each mean, and which are actually worth your time.",
   canonical: CANONICAL,
 })
 

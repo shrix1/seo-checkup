@@ -12,10 +12,11 @@ import { absoluteUrl, features } from "@/lib/site"
 const feature = features.domainRating
 
 export const metadata: Metadata = constructMetadata({
-  title: "Free Domain Rating Checker | SeoCheckup",
-  description: feature.description,
+  title: "Check Domain Rating — Free DR Tool | SeoCheckup",
+  description:
+    "Look up the Ahrefs Domain Rating for any domain instantly. Free backlink-authority score, no account and no API key required.",
   canonical: feature.toolPath,
-  ogImage: "/og-dark.png",
+  ogImage: "/og/og-domain-rating.svg",
 })
 
 export const revalidate = 0
