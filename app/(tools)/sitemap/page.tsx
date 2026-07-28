@@ -47,7 +47,7 @@ export default async function Sitemap({
     <ToolShell
       icon={AreaChart}
       title="Sitemap Link Checker"
-      description="Expand sitemap indexes, list every URL, then copy or filter results."
+      description="Paste a domain and we'll find the sitemap — from robots.txt or the usual paths — then expand every index and list all URLs."
     >
       <JsonLd data={appJsonLd} />
       <InputField key={query || "default"} query={query} />

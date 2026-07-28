@@ -8,6 +8,8 @@ import {
   type SitemapValidation,
 } from "@/lib/sitemap-types"
 import { cn } from "@/lib/utils"
+import { AlertTriangle, ArrowRight } from "lucide-react"
+import Link from "next/link"
 import { useMemo } from "react"
 
 const MAX_TABLE_ROWS = 250
@@ -133,6 +135,74 @@ function buildFindings(validation: SitemapValidation): Finding[] {
   }
 
   return findings
+}
+
+/**
+ * Shown when auto-discovery came up empty. Rather than a bare error, it says
+ * exactly where we looked and asks for the real URL, since the person running
+ * the tool usually knows it.
+ */
+export function SitemapNotFound({
+  requested,
+  tried,
+  robotsHref,
+}: {
+  requested: string
+  tried: { url: string; reason: string }[]
+  robotsHref: string
+}) {
+  return (
+    <section className="mt-8 rounded-lg border border-warning/40 bg-warning-subtle/40">
+      <div className="flex gap-3 border-b border-warning/30 px-4 py-3.5">
+        <AlertTriangle
+          className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <p className="text-sm font-medium">
+            No sitemap found for {requested}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We read robots.txt and tried the usual paths. If you know the real
+            URL, paste it in the field above — something like{" "}
+            <span className="font-mono">yoursite.com/sitemap.xml</span> or{" "}
+            <span className="font-mono">yoursite.com/sitemap_index.xml</span>.
+          </p>
+        </div>
+      </div>
+
+      {tried.length > 0 && (
+        <div className="px-4 py-3">
+          <p className="text-label font-medium uppercase text-muted-foreground">
+            Where we looked
+          </p>
+          <ul className="mt-2 space-y-1">
+            {tried.map((t) => (
+              <li
+                key={t.url}
+                className="flex flex-wrap items-baseline gap-x-2 text-xs"
+              >
+                <span className="break-all font-mono text-muted-foreground">
+                  {t.url.replace(/^https?:\/\//, "")}
+                </span>
+                <span className="text-muted-foreground/70">— {t.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="border-t border-warning/30 px-4 py-3 text-sm">
+        <Link
+          href={robotsHref}
+          className="inline-flex items-center gap-1.5 text-link underline underline-offset-2"
+        >
+          Check whether robots.txt declares one
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </div>
+    </section>
+  )
 }
 
 export function SitemapValidationPanel({

@@ -18,11 +18,29 @@ import {
   restructureSitemap,
   sortSitemapStructure,
 } from "./generate-deep-routes"
-import { SitemapTable, SitemapValidationPanel } from "./sitemap-analysis"
+import {
+  SitemapNotFound,
+  SitemapTable,
+  SitemapValidationPanel,
+} from "./sitemap-analysis"
 
-const DEFAULT_SITEMAP = "https://shrix1.com/sitemap.xml"
+const DEFAULT_SITEMAP = "shrix1.com"
 
 type ViewMode = "tree" | "table"
+
+type ResolvedFrom = "input" | "robots" | "common-path"
+
+type DiscoveredResult = ExpandResult & {
+  resolvedFrom?: ResolvedFrom
+  requestedUrl?: string
+  tried?: { url: string; source: ResolvedFrom; reason: string }[]
+}
+
+const RESOLVED_LABEL: Record<ResolvedFrom, string> = {
+  input: "the URL you entered",
+  robots: "the Sitemap: directive in robots.txt",
+  "common-path": "a common sitemap path",
+}
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITEMAP
@@ -60,9 +78,16 @@ const InputField = ({ query }: { query: string }) => {
   const [baseUrl, setBaseUrl] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Discovery misses get their own panel rather than a bare red error.
+  const [notFound, setNotFound] = useState<{
+    requested: string
+    tried: { url: string; reason: string }[]
+  } | null>(null)
   const [copied, setCopied] = useState(false)
   const [resultsReady, setResultsReady] = useState(false)
-  const [expandResult, setExpandResult] = useState<ExpandResult | null>(null)
+  const [expandResult, setExpandResult] = useState<DiscoveredResult | null>(
+    null
+  )
   const [selectedSource, setSelectedSource] = useState<string>("all")
   const [sitemapWithDeepRoutes, setSitemapWithDeepRoutes] = useState<
     ReturnType<typeof restructureSitemap>
@@ -70,7 +95,7 @@ const InputField = ({ query }: { query: string }) => {
   const hasFetched = useRef(false)
 
   const applySourceFilter = useCallback(
-    (expanded: ExpandResult, sourceKey: string) => {
+    (expanded: DiscoveredResult, sourceKey: string) => {
       const scoped =
         sourceKey === "all"
           ? expanded.entries
@@ -88,7 +113,11 @@ const InputField = ({ query }: { query: string }) => {
   const fetchExpandedSitemap = useCallback(
     async (
       url: string
-    ): Promise<{ result: ExpandResult | null; error?: string }> => {
+    ): Promise<{
+      result: DiscoveredResult | null
+      error?: string
+      notFound?: { requested: string; tried: { url: string; reason: string }[] }
+    }> => {
       try {
         const res = await fetch(`/api/sitemap?q=${encodeURIComponent(url)}`)
         const json = await res.json()
@@ -110,13 +139,24 @@ const InputField = ({ query }: { query: string }) => {
           !Array.isArray(json.urls) ||
           !Array.isArray(json.sources)
         ) {
+          // A 404 from discovery means "we looked and found nothing" — that
+          // deserves the guided panel, not a red error string.
+          if (res.status === 404) {
+            return {
+              result: null,
+              notFound: {
+                requested: json.requestedUrl || url,
+                tried: Array.isArray(json.tried) ? json.tried : [],
+              },
+            }
+          }
           return {
             result: null,
-            error: json.error || `Could not expand a sitemap at ${url}`,
+            error: json.error || `Could not find a sitemap for ${url}`,
           }
         }
 
-        return { result: json as ExpandResult }
+        return { result: json as DiscoveredResult }
       } catch (err) {
         console.error("Error fetching expanded sitemap:", err)
         return { result: null, error: `Could not expand a sitemap at ${url}` }
@@ -134,26 +174,33 @@ const InputField = ({ query }: { query: string }) => {
       }
       setLoading(true)
       setError(null)
+      setNotFound(null)
       setResultsReady(false)
 
-      const { result: expanded, error: fetchError } =
-        await fetchExpandedSitemap(target)
+      const {
+        result: expanded,
+        error: fetchError,
+        notFound: miss,
+      } = await fetchExpandedSitemap(target)
 
       if (!expanded) {
-        setError(fetchError || `Could not expand a sitemap at ${target}`)
+        if (miss) setNotFound(miss)
+        else setError(fetchError || `Could not expand a sitemap at ${target}`)
         setExpandResult(null)
         setRawUrls([])
         setLoading(false)
         return
       }
 
-      const base = getSitemapBaseUrl(target)
+      // Base off the sitemap we actually resolved, which may differ from the
+      // URL that was typed when discovery kicked in.
+      const base = getSitemapBaseUrl(expanded.indexUrl || target)
       setBaseUrl(base)
       setExpandResult(expanded)
       setSelectedSource("all")
       applySourceFilter(expanded, "all")
       if (expanded.urls.length === 0) {
-        setError(`No URLs found in ${target}`)
+        setError(`No URLs found in ${expanded.indexUrl || target}`)
       }
       setLoading(false)
     },
@@ -206,8 +253,8 @@ const InputField = ({ query }: { query: string }) => {
           value={value}
           onChange={setValue}
           onSubmit={handleSubmit}
-          placeholder="yoursite.com/sitemap.xml"
-          ariaLabel="Sitemap URL to expand"
+          placeholder="yoursite.com"
+          ariaLabel="Site or sitemap URL to expand"
           loading={loading}
           buttonLabel="Expand sitemap"
           loadingLabel="Expanding…"
@@ -226,6 +273,16 @@ const InputField = ({ query }: { query: string }) => {
         />
 
         {error && <ToolError>{error}</ToolError>}
+
+        {notFound && !loading && (
+          <SitemapNotFound
+            requested={notFound.requested.replace(/^https?:\/\//, "")}
+            tried={notFound.tried}
+            robotsHref={`/robots?q=${encodeURIComponent(
+              `${notFound.requested.replace(/\/[^/]*$/, "")}/robots.txt`
+            )}`}
+          />
+        )}
       </div>
 
       {loading && (
@@ -256,6 +313,13 @@ const InputField = ({ query }: { query: string }) => {
                 >
                   {expandResult.indexUrl}
                 </a>
+                {expandResult.resolvedFrom &&
+                  expandResult.resolvedFrom !== "input" && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Found automatically via{" "}
+                      {RESOLVED_LABEL[expandResult.resolvedFrom]}
+                    </p>
+                  )}
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span className="text-sm text-muted-foreground">
