@@ -5,13 +5,6 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-export function normalizeUrl(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) return trimmed
-  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`
-  return trimmed
-}
-
 /**
  * The one URL field, shared by the home hero and every PSEO landing.
  * Input and button are joined into a single focus surface on sm+ and stack
@@ -39,7 +32,9 @@ export default function AuditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        const q = normalizeUrl(url) || placeholder
+        // No scheme is prepended — every API route defaults bare domains to
+        // https, so the query string stays exactly as the user typed it.
+        const q = url.trim() || placeholder
         router.push(`${toolPath}?q=${encodeURIComponent(q)}`)
       }}
       className={cn(

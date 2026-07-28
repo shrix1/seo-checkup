@@ -26,6 +26,9 @@ export async function fetchUrl(
   }
 }
 
+// Re-exported so server routes can keep importing it from here.
+export { ensureHttpScheme } from "@/lib/utils"
+
 export function normalizeOrigin(input: string): URL {
   let raw = input.trim()
   if (!/^https?:\/\//i.test(raw)) {

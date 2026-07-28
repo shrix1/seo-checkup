@@ -18,7 +18,7 @@ export default function DomainRatingCheckerPage() {
       h1="Free Domain Rating Checker"
       pitch="Look up Ahrefs Domain Rating for any domain in seconds. Free, no API key, with required Ahrefs attribution."
       toolPath="/domain-rating"
-      defaultDemoUrl="https://shrix1.com"
+      defaultDemoUrl="shrix1.com"
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

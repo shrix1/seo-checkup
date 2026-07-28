@@ -18,7 +18,7 @@ export default function RobotsTxtCheckerPage() {
       h1="Free Robots.txt Checker"
       pitch="Fetch any public robots.txt and highlight User-agent, Allow, Disallow, and Sitemap lines."
       toolPath="/robots"
-      defaultDemoUrl="https://shrix1.com/robots.txt"
+      defaultDemoUrl="shrix1.com/robots.txt"
       inputPlaceholder="https://example.com/robots.txt"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

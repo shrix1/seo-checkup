@@ -6,6 +6,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * People paste bare domains. Default them to https rather than rejecting the
+ * input. Lives here (not fetch-url) so client components can use it without
+ * pulling node:dns into the browser bundle.
+ */
+export function ensureHttpScheme(input: string): string {
+  const raw = input.trim()
+  if (!raw) return raw
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+}
+
+/** Strip the scheme for display, so inputs and examples read as bare domains. */
+export function stripScheme(input: string): string {
+  return input.trim().replace(/^https?:\/\//i, "")
+}
+
 export function compareUrls(url1: string, url2: string) {
   const path1 = url1.split("/").length
   const path2 = url2.split("/").length

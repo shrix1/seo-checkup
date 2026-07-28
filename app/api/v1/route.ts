@@ -4,6 +4,7 @@ import { getClientIp } from "@/lib/client-ip"
 import getRatelimit from "@/lib/rate-limit"
 import { safeFetch } from "@/lib/safe-fetch"
 import { assertPublicHttpUrl } from "@/lib/safe-url"
+import { ensureHttpScheme } from "@/lib/fetch-url"
 
 const rateLimit = getRatelimit(20, "24 h")
 
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
 
   let url: string
   try {
-    url = decodeURIComponent(q)
+    url = ensureHttpScheme(decodeURIComponent(q))
   } catch {
     return NextResponse.json({ error: "Invalid q parameter" }, { status: 400 })
   }

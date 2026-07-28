@@ -18,7 +18,7 @@ export default function MetaTagsCheckerPage() {
       h1="Free Meta Tags Checker"
       pitch="Preview title, description, and social cards so search and share snippets look right before you publish."
       toolPath="/metadata"
-      defaultDemoUrl="https://shrix1.com"
+      defaultDemoUrl="shrix1.com"
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

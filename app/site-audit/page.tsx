@@ -18,7 +18,7 @@ export default function SiteAuditLandingPage() {
       h1="Free Website SEO Audit"
       pitch="Paste one URL. Get a prioritized checklist across on-page SEO, robots & sitemap, and trust signals — free, with no locked details."
       toolPath="/audit"
-      defaultDemoUrl="https://shrix1.com"
+      defaultDemoUrl="shrix1.com"
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

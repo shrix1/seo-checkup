@@ -18,7 +18,7 @@ export default function SitemapCheckerPage() {
       h1="Free XML Sitemap Checker"
       pitch="Expand sitemap indexes, list every page URL, then copy or filter by child sitemap."
       toolPath="/sitemap"
-      defaultDemoUrl="https://shrix1.com/sitemap.xml"
+      defaultDemoUrl="shrix1.com/sitemap.xml"
       inputPlaceholder="https://example.com/sitemap.xml"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

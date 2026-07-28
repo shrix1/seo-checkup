@@ -16,7 +16,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-const DEFAULT_SITE = "https://shrix1.com"
+const DEFAULT_SITE = "shrix1.com"
 
 type DrResult = {
   domain: string
