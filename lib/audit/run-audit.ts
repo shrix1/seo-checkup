@@ -11,6 +11,11 @@ import { parseHtml, parseSitemapLines } from "@/lib/audit/parse-html"
 import { sameRegistrableHost } from "@/lib/safe-url"
 import { matchRobots, parseRobots } from "@/lib/robots-parser"
 import { AI_CRAWLERS, CITATION_CRAWLERS } from "@/lib/ai-crawlers"
+import {
+  CONFORMANCE_LABELS,
+  detectMarkdownTwin,
+  TWIN_METHOD_LABELS,
+} from "@/lib/markdown-twin"
 import { measureSnippet } from "@/lib/serp-width"
 import type {
   AuditCheck,
@@ -23,8 +28,51 @@ const CATEGORY_LABELS = {
   onpage: "On-page",
   crawl: "Robots & sitemap",
   trust: "Trust & security",
-  ai: "AI & answer engines",
+  ai: "AI crawler access",
+  aeo: "Answer engines (AEO)",
 } as const
+
+/** Schema types answer engines lean on when deciding what a page can answer. */
+const ANSWER_SCHEMA_TYPES = new Set([
+  "FAQPage",
+  "QAPage",
+  "HowTo",
+  "Article",
+  "BlogPosting",
+  "NewsArticle",
+  "TechArticle",
+  "Recipe",
+  "Product",
+  "Review",
+  "Course",
+  "Event",
+])
+
+/**
+ * Deliberately narrow. A bare "What…" prefix matches plenty of headings that
+ * are not questions at all ("What Our Users Say"), so require the two-word
+ * openings people actually type into an assistant.
+ */
+const QUESTION_START = new RegExp(
+  "^(" +
+    [
+      "how\\s+(to|do|does|can|long|much|many)",
+      "what\\s+(is|are|was|were|does|do|makes|happens)",
+      "why\\s+(is|are|do|does|should|would)",
+      "when\\s+(to|should|do|does|is|are)",
+      "where\\s+(to|do|does|can|is|are)",
+      "which\\s+",
+      "who\\s+(is|are|should)",
+      "can\\s+(i|you|it|we)",
+      "do\\s+(i|you|we)",
+      "does\\s+(it|this|the)",
+      "is\\s+(it|there|this)",
+      "are\\s+(there|these|they)",
+      "should\\s+(i|you|we)",
+    ].join("|") +
+    ")",
+  "i"
+)
 
 /** A path no real site should serve, used to detect soft 404s. */
 const NOT_FOUND_PROBE = "/seocheckup-404-probe-do-not-index"
@@ -93,6 +141,8 @@ export async function runAudit(input: string): Promise<AuditReport> {
 
   const robotsUrl = `${origin}/robots.txt`
   const llmsUrl = `${origin}/llms.txt`
+  const llmsFullUrl = `${origin}/llms-full.txt`
+  const aiTxtUrl = `${origin}/ai.txt`
   const httpProbeUrl = `http://${originUrl.hostname}/`
   const altHost = toggleWww(originUrl.hostname)
   const altProbeUrl = `https://${altHost}/`
@@ -102,16 +152,29 @@ export async function runAudit(input: string): Promise<AuditReport> {
   const robotsDeep = `/robots?q=${encodeURIComponent(robotsUrl)}`
   const drDeep = `/domain-rating?q=${encodeURIComponent(domain)}`
 
-  const [pageRes, robotsRes, drRes, llmsRes, httpProbe, altProbe, notFoundProbe] =
-    await Promise.all([
-      fetchUrl(pageUrl),
-      fetchUrl(robotsUrl),
-      fetchDomainRating(domain),
-      fetchUrl(llmsUrl, { maxBytes: 4096 }),
-      fetchUrl(httpProbeUrl, { maxBytes: 2048 }),
-      fetchUrl(altProbeUrl, { maxBytes: 2048 }),
-      fetchUrl(notFoundUrl, { maxBytes: 2048 }),
-    ])
+  const [
+    pageRes,
+    robotsRes,
+    drRes,
+    llmsRes,
+    llmsFullRes,
+    aiTxtRes,
+    httpProbe,
+    altProbe,
+    notFoundProbe,
+    markdownTwin,
+  ] = await Promise.all([
+    fetchUrl(pageUrl),
+    fetchUrl(robotsUrl),
+    fetchDomainRating(domain),
+    fetchUrl(llmsUrl, { maxBytes: 4096 }),
+    fetchUrl(llmsFullUrl, { maxBytes: 2048 }),
+    fetchUrl(aiTxtUrl, { maxBytes: 2048 }),
+    fetchUrl(httpProbeUrl, { maxBytes: 2048 }),
+    fetchUrl(altProbeUrl, { maxBytes: 2048 }),
+    fetchUrl(notFoundUrl, { maxBytes: 2048 }),
+    detectMarkdownTwin(pageUrl),
+  ])
 
   const parsed = pageRes.ok ? parseHtml(pageRes.body, pageUrl) : parseHtml("")
   const robotsParsed = parseRobots(robotsRes.ok ? robotsRes.body : "")
@@ -826,22 +889,261 @@ export async function runAudit(input: string): Promise<AuditReport> {
     deepLink: robotsDeep,
   })
 
-  const trainingBlocked = AI_CRAWLERS.filter(
-    (c) => c.purpose === "training"
-  ).filter((c) => !matchRobots(robotsParsed, c.name, pageUrl).allowed)
+  const trainingCrawlers = AI_CRAWLERS.filter((c) => c.purpose === "training")
+  const trainingBlocked = trainingCrawlers.filter(
+    (c) => !matchRobots(robotsParsed, c.name, pageUrl).allowed
+  )
+  const signals = robotsParsed.contentSignals
+  checks.push({
+    id: "content-signals",
+    category: "ai",
+    label: "Content usage policy",
+    status: signals ? "pass" : "warn",
+    value: signals
+      ? signals.raw
+      : `${trainingBlocked.length}/${trainingCrawlers.length} training crawlers blocked`,
+    detail: signals
+      ? `Content-Signal declares search=${signals.search ? "yes" : "no"}, ai-input=${signals["ai-input"] ? "yes" : "no"}, ai-train=${signals["ai-train"] ? "yes" : "no"}`
+      : "No Content-Signal directive — your reuse policy is implied by Disallow rules alone",
+    fixHint:
+      "Add Content-Signal: search=yes, ai-input=yes, ai-train=no to robots.txt to state which uses you permit.",
+    deepLink: robotsDeep,
+  })
+
+  // ────────────────────── Answer engines (AEO / GEO) ──────────────────────
+
+  // Markdown twin — a clean Markdown copy of the page for answer engines.
+  checks.push({
+    id: "markdown-twin",
+    category: "aeo",
+    label: "Markdown twin",
+    status: markdownTwin.found ? "pass" : "warn",
+    value: markdownTwin.found
+      ? `${markdownTwin.url}${
+          markdownTwin.tokens
+            ? ` · ${markdownTwin.tokens.toLocaleString()} tokens`
+            : ""
+        }`
+      : markdownTwin.candidates
+          .map((c) => `${c.url.replace(origin, "")} → ${c.reason}`)
+          .slice(0, 3)
+          .join(" · ") || "No candidates probed",
+    detail: markdownTwin.found
+      ? `A Markdown copy of this page is served via ${TWIN_METHOD_LABELS[markdownTwin.method!]}`
+      : "No Markdown copy of this page. Answer engines parse Markdown far more reliably than HTML, and it costs 60–80% fewer tokens to read.",
+    fixHint:
+      "Serve the same page as Markdown at /path.md (and /index.md at the root), or return Markdown when the request sends Accept: text/markdown.",
+  })
+
+  // Conformance only makes sense once a twin exists — grading a site that has
+  // not adopted the pattern at all would just repeat the check above.
+  if (markdownTwin.found) {
+    const failedMust = markdownTwin.spec.filter(
+      (s) => s.level === "must" && !s.ok
+    )
+    const failedShould = markdownTwin.spec.filter(
+      (s) => s.level === "should" && !s.ok
+    )
+
+    checks.push({
+      id: "aeo-conformance",
+      category: "aeo",
+      label: "AEO spec conformance",
+      status:
+        failedMust.length > 0 ? "fail" : failedShould.length > 0 ? "warn" : "pass",
+      value: `${markdownTwin.percent}% · ${CONFORMANCE_LABELS[markdownTwin.level]}`,
+      detail:
+        failedMust.length === 0 && failedShould.length === 0
+          ? "The twin meets every MUST and SHOULD rule in AEO Specification v1.0"
+          : [
+              failedMust.length > 0
+                ? `Missing MUST: ${failedMust.map((s) => s.label).join(", ")}`
+                : null,
+              failedShould.length > 0
+                ? `Missing SHOULD: ${failedShould.map((s) => s.label).join(", ")}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+      fixHint:
+        "The twin must send Content-Type: text/markdown, X-Markdown-Tokens, X-Robots-Tag: noindex and Vary: Accept. See dualmark.dev for the full spec.",
+    })
+
+    // Discovery: an agent should not have to guess the twin's URL.
+    const linkHeader = pageRes.headers.get("link") || ""
+    const advertisedByHeader =
+      /rel\s*=\s*"?alternate"?/i.test(linkHeader) &&
+      /type\s*=\s*"?text\/(x-)?markdown"?/i.test(linkHeader)
+    const advertisedByTag = Boolean(parsed.markdownAlternate)
+    const htmlVary = /accept/i.test(pageRes.headers.get("vary") || "")
+
+    checks.push({
+      id: "aeo-discovery",
+      category: "aeo",
+      label: "Twin advertised to agents",
+      status:
+        advertisedByHeader || advertisedByTag ? (htmlVary ? "pass" : "warn") : "fail",
+      value:
+        [
+          advertisedByHeader ? "Link header" : null,
+          advertisedByTag ? `<link rel=alternate> → ${parsed.markdownAlternate}` : null,
+          htmlVary ? "Vary: Accept" : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "(not advertised)",
+      detail:
+        advertisedByHeader || advertisedByTag
+          ? htmlVary
+            ? "Agents can discover the twin without guessing the URL"
+            : "The twin is advertised, but the HTML response is missing Vary: Accept so caches may serve the wrong format"
+          : "The twin exists but nothing points to it — agents have to guess the URL",
+      fixHint:
+        'Send Link: <url.md>; rel="alternate"; type="text/markdown" and Vary: Accept on the HTML response.',
+    })
+  }
+
+  const llmsExtras = [
+    llmsFullRes.ok ? "llms-full.txt" : null,
+    aiTxtRes.ok ? "ai.txt" : null,
+  ].filter(Boolean)
   checks.push({
     id: "llms-txt",
-    category: "ai",
+    category: "aeo",
     label: "llms.txt",
     status: llmsRes.ok ? "pass" : "warn",
-    value: llmsRes.ok ? `${llmsUrl} (${llmsRes.status})` : "(not found)",
+    value: llmsRes.ok
+      ? [`${llmsUrl} (${llmsRes.status})`, ...llmsExtras].join(" · ")
+      : "(not found)",
     detail: llmsRes.ok
-      ? "llms.txt is published, pointing AI engines at your key content"
-      : `No llms.txt at the site root · ${trainingBlocked.length}/${
-          AI_CRAWLERS.filter((c) => c.purpose === "training").length
-        } training crawlers currently blocked`,
+      ? `llms.txt is published${llmsExtras.length ? `, alongside ${llmsExtras.join(" and ")}` : " — consider llms-full.txt for the full text too"}`
+      : "No llms.txt at the site root. robots.txt grants access; llms.txt tells engines what is worth reading.",
     fixHint:
-      "Publish /llms.txt listing your most important pages. robots.txt grants access; llms.txt guides what to read.",
+      "Publish /llms.txt listing your key pages, and /llms-full.txt with their full Markdown text for docs-heavy sites.",
+  })
+
+  // The single biggest AEO blocker: most answer engines do not execute JS.
+  const jsHeavy = parsed.scriptCount >= 3
+  checks.push({
+    id: "no-js-content",
+    category: "aeo",
+    label: "Content readable without JavaScript",
+    status:
+      parsed.wordCount >= 200 ? "pass" : parsed.wordCount >= 50 ? "warn" : "fail",
+    value: `${parsed.wordCount} words in raw HTML · ${parsed.scriptCount} script tags`,
+    detail:
+      parsed.wordCount >= 200
+        ? "The page body is present in the HTML source, so crawlers that skip JavaScript still see it"
+        : parsed.wordCount >= 50
+          ? "Only a little text is in the raw HTML — check the main content is server-rendered"
+          : jsHeavy
+            ? "Almost no text in the raw HTML. ChatGPT and Perplexity do not run JavaScript, so they see a near-empty page."
+            : "Almost no text in the raw HTML for engines to read",
+    fixHint:
+      "Server-render or pre-render the main content so it appears in the initial HTML response.",
+  })
+
+  const answerTypes = parsed.jsonLdTypes.filter((t) =>
+    ANSWER_SCHEMA_TYPES.has(t)
+  )
+  checks.push({
+    id: "answer-schema",
+    category: "aeo",
+    label: "Answer-ready structured data",
+    status: answerTypes.length > 0 ? "pass" : "warn",
+    value: answerTypes.length > 0 ? answerTypes.join(", ") : "(none)",
+    detail:
+      answerTypes.length > 0
+        ? "Schema tells answer engines what kind of question this page can answer"
+        : "No FAQPage, HowTo, QAPage or Article schema — engines have to infer what this page is",
+    fixHint:
+      "Add FAQPage or HowTo schema to pages that answer questions, and Article to editorial pages.",
+  })
+
+  const questionHeadings = parsed.headings.filter(
+    (h) => h.text.includes("?") || QUESTION_START.test(h.text.trim())
+  )
+  checks.push({
+    id: "question-headings",
+    category: "aeo",
+    label: "Question-shaped headings",
+    status: questionHeadings.length > 0 ? "pass" : "warn",
+    value:
+      questionHeadings.length > 0
+        ? `${questionHeadings.length} of ${parsed.headings.length}: ${questionHeadings
+            .slice(0, 2)
+            .map((h) => h.text)
+            .join(" · ")}`
+        : `0 of ${parsed.headings.length} headings`,
+    detail:
+      questionHeadings.length > 0
+        ? "Headings phrased as questions map directly onto what users ask assistants"
+        : "No headings phrased as questions — answer engines match user questions to headings",
+    fixHint:
+      "Phrase section headings the way users ask, then answer in the first paragraph beneath.",
+  })
+
+  const anchored = parsed.headings.filter((h) => h.id).length
+  const anchorRatio =
+    parsed.headings.length === 0 ? 1 : anchored / parsed.headings.length
+  checks.push({
+    id: "heading-anchors",
+    category: "aeo",
+    label: "Linkable headings",
+    status:
+      parsed.headings.length < 2 ? "pass" : anchorRatio >= 0.8 ? "pass" : "warn",
+    value:
+      parsed.headings.length === 0
+        ? "No H2/H3 sections"
+        : `${anchored}/${parsed.headings.length} have an id`,
+    detail:
+      parsed.headings.length < 2
+        ? "Too few sections for anchors to matter"
+        : anchorRatio >= 0.8
+          ? "Sections have anchor ids, so answers can deep-link to the exact passage"
+          : "Most headings have no id, so engines can only cite the page, not the passage",
+    fixHint:
+      "Give every H2/H3 a stable id so answers can link straight to the relevant section.",
+  })
+
+  const freshnessRaw =
+    parsed.jsonLdDateModified ||
+    parsed.metaTags["article:modified_time"] ||
+    parsed.jsonLdDatePublished ||
+    parsed.metaTags["article:published_time"]
+  const freshnessMs = freshnessRaw ? Date.parse(freshnessRaw) : NaN
+  const monthsOld = Number.isFinite(freshnessMs)
+    ? (Date.now() - freshnessMs) / (1000 * 60 * 60 * 24 * 30)
+    : null
+  checks.push({
+    id: "freshness",
+    category: "aeo",
+    label: "Freshness signal",
+    status:
+      monthsOld === null ? "warn" : monthsOld <= 12 ? "pass" : "warn",
+    value: freshnessRaw || "(no date)",
+    detail:
+      monthsOld === null
+        ? "No dateModified or datePublished for engines to judge how current this is"
+        : monthsOld <= 12
+          ? `Last dated ${Math.max(0, Math.round(monthsOld))} month(s) ago`
+          : `Last dated ${Math.round(monthsOld)} months ago — most AI citations go to pages updated within a year`,
+    fixHint:
+      "Publish dateModified in your JSON-LD and keep it accurate when you revise a page.",
+  })
+
+  checks.push({
+    id: "author-signal",
+    category: "aeo",
+    label: "Author attribution",
+    status: parsed.jsonLdHasAuthor ? "pass" : "warn",
+    value: parsed.jsonLdHasAuthor
+      ? "author declared"
+      : parsed.metaTags["author"] || "(none)",
+    detail: parsed.jsonLdHasAuthor
+      ? "An author is declared, which supports the credibility signals engines weigh"
+      : "No author in schema or meta tags",
+    fixHint:
+      "Add an author to your Article/BlogPosting JSON-LD, linked to a real person or organisation page.",
   })
 
   // ─────────────────────────────── Assemble ───────────────────────────────
@@ -851,6 +1153,7 @@ export async function runAudit(input: string): Promise<AuditReport> {
     crawl: checks.filter((c) => c.category === "crawl"),
     trust: checks.filter((c) => c.category === "trust"),
     ai: checks.filter((c) => c.category === "ai"),
+    aeo: checks.filter((c) => c.category === "aeo"),
   }
 
   const categories: CategoryScore[] = (

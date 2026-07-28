@@ -76,6 +76,15 @@ export type ParsedHtml = {
   linkInternal: number
   linkExternal: number
   wordCount: number
+  /** Script tags in the raw HTML — used to spot client-rendered shells */
+  scriptCount: number
+  /** H2/H3 headings with their anchor ids, for answer-engine extractability */
+  headings: { level: number; text: string; id?: string }[]
+  jsonLdDatePublished?: string
+  jsonLdDateModified?: string
+  jsonLdHasAuthor: boolean
+  /** <link rel="alternate" type="text/markdown"> — AEO twin discovery */
+  markdownAlternate?: string
 }
 
 const EMPTY_PARSED: ParsedHtml = {
@@ -94,6 +103,9 @@ const EMPTY_PARSED: ParsedHtml = {
   linkInternal: 0,
   linkExternal: 0,
   wordCount: 0,
+  scriptCount: 0,
+  headings: [],
+  jsonLdHasAuthor: false,
 }
 
 function collectMetaTags(html: string): Record<string, string> {
@@ -158,6 +170,7 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
   const linkTags = html.match(/<link\b[^>]*>/gi) || []
   let canonical: string | undefined
   let favicon: string | undefined
+  let markdownAlternate: string | undefined
   const hreflang: HreflangEntry[] = []
 
   for (const tag of linkTags) {
@@ -165,6 +178,14 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
     const href = attr(tag, "href")
     if (!href) continue
     const relParts = rel.split(/\s+/)
+
+    if (
+      relParts.includes("alternate") &&
+      /text\/(x-)?markdown/i.test(attr(tag, "type") || "") &&
+      !markdownAlternate
+    ) {
+      markdownAlternate = decodeEntities(href.trim())
+    }
 
     if (relParts.includes("canonical") && !canonical) {
       canonical = decodeEntities(href.trim())
@@ -260,8 +281,23 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
     }
   }
 
+  // --- Headings (answer engines match questions to headings) ---
+  const headings: { level: number; text: string; id?: string }[] = []
+  for (const match of html.matchAll(/<h([23])\b([^>]*)>([\s\S]*?)<\/h\1>/gi)) {
+    const level = Number(match[1])
+    const text = decodeEntities(
+      match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+    )
+    if (!text) continue
+    headings.push({ level, text, id: attr(`<h ${match[2]}>`, "id") })
+  }
+
   // --- JSON-LD ---
   const jsonLdTypes: string[] = []
+  let jsonLdDatePublished: string | undefined
+  let jsonLdDateModified: string | undefined
+  let jsonLdHasAuthor = false
+
   const scripts = html.matchAll(
     /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
   )
@@ -284,6 +320,13 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
             if (typeof item === "string") jsonLdTypes.push(item)
           }
         }
+        if (typeof obj["datePublished"] === "string" && !jsonLdDatePublished) {
+          jsonLdDatePublished = obj["datePublished"]
+        }
+        if (typeof obj["dateModified"] === "string" && !jsonLdDateModified) {
+          jsonLdDateModified = obj["dateModified"]
+        }
+        if (obj["author"]) jsonLdHasAuthor = true
         if (obj["@graph"]) collect(obj["@graph"])
       }
       collect(data)
@@ -329,6 +372,15 @@ export function parseHtml(html: string, pageUrl?: string): ParsedHtml {
     linkInternal,
     linkExternal,
     wordCount: textWordCount(html),
+    scriptCount: (html.match(/<script\b/gi) || []).length,
+    headings,
+    jsonLdDatePublished,
+    jsonLdDateModified,
+    jsonLdHasAuthor:
+      jsonLdHasAuthor ||
+      Boolean(metaTags["author"]) ||
+      Boolean(metaTags["article:author"]),
+    markdownAlternate,
   }
 }
 

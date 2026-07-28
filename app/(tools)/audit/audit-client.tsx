@@ -4,6 +4,7 @@ import Container from "@/components/container"
 import { FadeIn } from "@/components/motion"
 import ScoreRing, { scoreBand } from "@/components/score-ring"
 import { StatusChip, StatusCount, StatusDot } from "@/components/status"
+import { TocRail, type TocItem } from "@/components/toc"
 import ToolSearchForm, {
   ToolError,
   ToolExample,
@@ -11,6 +12,7 @@ import ToolSearchForm, {
 import { Button } from "@/components/ui/button"
 import Disclosure from "@/components/ui/disclosure"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Claude, Cursor, OpenAI } from "@lobehub/icons"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
 import type { AuditCheck, AuditReport } from "@/lib/audit/types"
 import { cn } from "@/lib/utils"
@@ -22,6 +24,7 @@ import {
   ExternalLink,
   FileSearch,
   Globe2,
+  MessageSquareQuote,
   RefreshCw,
   Shield,
   Sparkles,
@@ -32,7 +35,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-const DEFAULT_SITE = "https://shrix1.com"
+const DEFAULT_SITE = "shrix1.com"
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITE
@@ -48,6 +51,7 @@ const categoryIcon = {
   crawl: Globe2,
   trust: Shield,
   ai: Bot,
+  aeo: MessageSquareQuote,
 } as const
 
 function reportToMarkdown(report: AuditReport): string {
@@ -79,52 +83,246 @@ function reportToMarkdown(report: AuditReport): string {
   return lines.filter((l) => l !== null).join("\n")
 }
 
+/**
+ * The "Fix with AI" export. This is pasted straight into an assistant, so it
+ * carries the vocabulary and the exact spec rules the model needs — otherwise
+ * it invents plausible-sounding header names for the newer AEO conventions.
+ */
 function reportToAiPrompt(report: AuditReport): string {
   const drLine =
     typeof report.domainRating === "number"
       ? `- Domain Rating: ${Math.round(report.domainRating)}/100`
       : null
 
-  const fixFirst =
-    report.fixFirst.length > 0
-      ? report.fixFirst.flatMap((c) => [
-          `- [${c.status.toUpperCase()}] ${c.label}`,
-          `  Detail: ${c.detail}`,
-          ...(c.value ? [`  Value: ${c.value}`] : []),
-          `  Fix hint: ${c.fixHint}`,
-        ])
-      : ["(No failing or warning checks — review category summaries below.)"]
-
-  const categorySummaries = report.categories.map(
-    (cat) =>
-      `- ${cat.label}: ${cat.score}/100 (${cat.fail} fail, ${cat.warn} warn, ${cat.pass} pass)`
-  )
+  const findingsByCategory = report.categories.flatMap((cat) => {
+    const issues = cat.checks.filter((c) => c.status !== "pass")
+    if (issues.length === 0) {
+      return [`### ${cat.label} — ${cat.score}/100`, "All checks pass.", ""]
+    }
+    return [
+      `### ${cat.label} — ${cat.score}/100 (${cat.fail} fail, ${cat.warn} warn, ${cat.pass} pass)`,
+      ...issues.flatMap((c) => [
+        `- [${c.status.toUpperCase()}] ${c.label}`,
+        `  Detail: ${c.detail}`,
+        ...(c.value ? [`  Measured: ${c.value}`] : []),
+        `  Hint: ${c.fixHint}`,
+      ]),
+      "",
+    ]
+  })
 
   const lines = [
-    "You are an experienced SEO engineer. Use this site audit report to produce a concrete remediation plan.",
+    "You are an experienced technical SEO engineer. Use the audit below to produce a concrete remediation plan for this specific site.",
+    "",
+    "## Context: the four disciplines this audit covers",
+    "- **SEO** — can a search engine fetch, understand and rank the page. Crawl access, indexability, on-page signals, canonicalization, authority.",
+    "- **PSEO (programmatic SEO)** — many pages generated from structured data. The risk is thin or duplicate templates that get crawled once and dropped.",
+    "- **AEO (answer engine optimization)** — being quoted inside an AI answer rather than listed as a link. Rewards content that is server-rendered, self-contained, well-structured and cheap for a machine to read.",
+    "- **GEO (generative engine optimization)** — how the brand is represented across generative answers. Cannot be measured from one URL; this audit only verifies its technical prerequisites.",
+    "",
+    "## Reference: conventions you may need to write",
+    "Do not invent header or file names for these. The correct forms are:",
+    "",
+    "**Markdown twin** — serve the same page as Markdown so answer engines can read it cheaply (roughly 60–80% fewer tokens than HTML). Two accepted mechanisms:",
+    "1. URL suffix: `/pricing` also answers at `/pricing.md`; the site root answers at `/index.md`.",
+    "2. Content negotiation: the same URL returns Markdown when the request sends `Accept: text/markdown`.",
+    "",
+    "**AEO Specification v1.0 (dualmark.dev)** — the Markdown response MUST send:",
+    "- `Content-Type: text/markdown; charset=utf-8`",
+    "- `X-Markdown-Tokens: <integer>` (estimated token count of the body)",
+    "- `X-Robots-Tag: noindex` (so the twin is not indexed as duplicate content)",
+    "- `Vary: Accept`",
+    "",
+    "The HTML response MUST advertise the twin and MUST set `Vary: Accept`:",
+    '- `Link: </pricing.md>; rel="alternate"; type="text/markdown"`',
+    "",
+    "SHOULD (recommended): return `406 Not Acceptable` when neither HTML nor Markdown is acceptable; send `X-Content-Type-Options: nosniff`; send `X-AEO-Version: 1.0`.",
+    "",
+    "**Discovery files** — `/llms.txt` (an index of your key pages, in Markdown), `/llms-full.txt` (their full text inlined for single-fetch ingestion), `/ai.txt` (your AI usage policy).",
+    "",
+    "**AI crawlers** — training and search crawlers are different and must be treated separately. `GPTBot` is not `OAI-SearchBot`; `ClaudeBot` is not `Claude-SearchBot`. Blocking a training crawler is a content-licensing decision. Blocking a search crawler removes the site from AI answers and the referral traffic they send.",
+    "",
+    "**Content-Signal** — a robots.txt directive declaring permitted uses, e.g. `Content-Signal: search=yes, ai-input=yes, ai-train=no`.",
+    "",
+    "**Snippet width** — Google truncates titles and descriptions by rendered pixel width, not character count. Budget roughly 580px for titles and 920px for descriptions on desktop.",
     "",
     "## Site",
     `- Domain: ${report.domain}`,
     `- URL audited: ${report.pageUrl}`,
     `- Final URL after redirects: ${report.finalUrl}`,
+    `- Audit type: ${report.isHomepage ? "homepage" : "page-level (site-wide checks still ran against the origin)"}`,
     drLine,
-    `- Overall audit score: ${report.score}/100`,
+    `- Overall score: ${report.score}/100`,
     `- Checks: ${report.fail} fail, ${report.warn} warn, ${report.pass} pass`,
     "",
     "## Instructions",
-    "- Prioritize FAIL issues first, then WARN. Skip or briefly note PASS items.",
-    "- Give concrete code or config changes (e.g. robots.txt, meta tags, canonicals, HTTP headers, sitemap.xml, JSON-LD).",
-    "- Tie each recommendation to a finding in this report. Do not invent PageSpeed, Core Web Vitals, or other claims not present here.",
-    "- Prefer actionable snippets and file-level guidance over generic SEO advice.",
+    "- Work in severity order: every FAIL first, then WARN. Do not restate passing checks.",
+    "- Group your plan by the four disciplines above so it is clear what each fix buys.",
+    "- Give concrete, copy-pasteable changes: robots.txt lines, meta tags, HTTP response headers, JSON-LD blocks, sitemap entries, framework config.",
+    "- Tie every recommendation to a specific finding below. Do not invent PageSpeed, Core Web Vitals, rankings, traffic or any metric not present here.",
+    "- Where a fix depends on the stack, say which layer it belongs in (CDN/edge, server middleware, framework config, template).",
+    "- End with the three changes that would move the score most, and why.",
     "",
-    "## Fix first (highest impact)",
-    ...fixFirst,
+    "## Findings",
     "",
-    "## Category summaries",
-    ...categorySummaries,
+    ...findingsByCategory,
   ]
 
   return lines.filter((l) => l !== null).join("\n")
+}
+
+/**
+ * The agents this prompt is written for, shown on the button itself so it is
+ * obvious what to do with it. Decorative — the button's accessible name still
+ * reads "Fix with agents".
+ */
+function AgentMarks() {
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 opacity-70" aria-hidden>
+      <Claude size={13} />
+      <OpenAI size={13} />
+      <Cursor size={13} />
+    </span>
+  )
+}
+
+/**
+ * Report actions. Rendered in the header on narrow screens and in the sticky
+ * contents rail from xl up, so exactly one copy is on screen at any width —
+ * and on wide screens they stay reachable as you scroll the report.
+ */
+function ReportActions({
+  layout,
+  copied,
+  promptCopied,
+  onCopyReport,
+  onCopyPrompt,
+  onRerun,
+}: {
+  layout: "row" | "stack"
+  copied: boolean
+  promptCopied: boolean
+  onCopyReport: () => void
+  onCopyPrompt: () => void
+  onRerun: () => void
+}) {
+  const stack = layout === "stack"
+  const buttonClass = stack ? "w-full justify-start" : undefined
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-2",
+        !stack && "shrink-0 items-end"
+      )}
+    >
+      {stack && (
+        <p className="text-label font-medium uppercase text-muted-foreground">
+          Actions
+        </p>
+      )}
+      <div className={cn(stack ? "flex flex-col gap-2" : "flex flex-wrap gap-2")}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onCopyPrompt}
+        title="Copy a remediation prompt written for Claude, ChatGPT or Cursor"
+        className={cn(buttonClass, stack && "justify-between")}
+      >
+        {promptCopied ? (
+          <>
+            <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Prompt copied
+          </>
+        ) : (
+          <>
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Fix with agents
+            <AgentMarks />
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onCopyReport}
+        className={buttonClass}
+      >
+        {copied ? (
+          <>
+            <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Copied
+          </>
+        ) : (
+          <>
+            <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Copy report
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={onRerun}
+        className={buttonClass}
+      >
+        <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        Re-run
+      </Button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Per-category scores at a glance, so the shape of the problem is visible
+ * without scrolling. Each ring jumps to its section.
+ */
+function CategoryRings({ report }: { report: AuditReport }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {report.categories.map((cat) => {
+        const Icon = categoryIcon[cat.id]
+        const band = scoreBand(cat.score)
+        return (
+          <a
+            key={cat.id}
+            href={`#audit-${cat.id}`}
+            onClick={(e) => {
+              const target = document.getElementById(`audit-${cat.id}`)
+              if (!target) return
+              e.preventDefault()
+              target.scrollIntoView({ behavior: "smooth", block: "start" })
+              window.history.replaceState(null, "", `#audit-${cat.id}`)
+            }}
+            className="flex flex-col items-center gap-2 rounded-lg border bg-background px-3 py-4 text-center transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:border-border-strong hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ScoreRing value={cat.score} size={64} strokeWidth={5} suffix={null} />
+            <span className="flex items-center gap-1.5 text-xs font-medium leading-tight">
+              <Icon
+                className="h-3 w-3 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              {cat.label}
+            </span>
+            <span className="text-[0.6875rem] text-muted-foreground tabular">
+              {cat.pass}/{cat.checks.length} passing
+            </span>
+            <span className={cn("text-[0.6875rem] font-medium", band.text)}>
+              {cat.fail > 0
+                ? `${cat.fail} to fix`
+                : cat.warn > 0
+                  ? `${cat.warn} to review`
+                  : "All clear"}
+            </span>
+          </a>
+        )
+      })}
+    </div>
+  )
 }
 
 function CheckRow({ check }: { check: AuditCheck }) {
@@ -260,8 +458,36 @@ export default function AuditClient({ query }: { query: string }) {
 
   const band = report ? scoreBand(report.score) : null
 
+  const tocItems = useMemo<TocItem[]>(() => {
+    if (!report) return []
+    const items: TocItem[] = [{ id: "audit-overview", label: "Overview" }]
+    if (report.fixFirst.length > 0) {
+      items.push({
+        id: "audit-fix-first",
+        label: "Fix first",
+        badge: {
+          text: String(report.fixFirst.length),
+          tone: report.fail > 0 ? "danger" : "warning",
+        },
+      })
+    }
+    for (const cat of report.categories) {
+      items.push({
+        id: `audit-${cat.id}`,
+        label: cat.label,
+        badge:
+          cat.fail > 0
+            ? { text: String(cat.fail), tone: "danger" }
+            : cat.warn > 0
+              ? { text: String(cat.warn), tone: "warning" }
+              : undefined,
+      })
+    }
+    return items
+  }, [report])
+
   return (
-    <Container width="reading" className="mt-10">
+    <Container width="reading" className="relative mt-10">
       <ToolSearchForm
         value={value}
         onChange={setValue}
@@ -288,8 +514,24 @@ export default function AuditClient({ query }: { query: string }) {
       {loading && <ReportSkeleton />}
 
       {report && !loading && (
+        <TocRail
+          items={tocItems}
+          footer={
+            <ReportActions
+              layout="stack"
+              copied={copied}
+              promptCopied={promptCopied}
+              onCopyReport={() => void copyReport()}
+              onCopyPrompt={() => void copyAiPrompt()}
+              onRerun={() => void run(value)}
+            />
+          }
+        />
+      )}
+
+      {report && !loading && (
         <FadeIn className="mt-10 space-y-10">
-          <header className="space-y-5">
+          <header id="audit-overview" className="scroll-mt-28 space-y-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="truncate font-mono text-sm font-medium">
@@ -303,52 +545,15 @@ export default function AuditClient({ query }: { query: string }) {
                   {new Date(report.auditedAt).toLocaleString()}
                 </p>
               </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={copyReport}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      Copy report
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void copyAiPrompt()}
-                >
-                  {promptCopied ? (
-                    <>
-                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      Prompt copied
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      Fix with AI
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void run(value)}
-                >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  Re-run
-                </Button>
+              <div className="xl:hidden">
+              <ReportActions
+                layout="row"
+                copied={copied}
+                promptCopied={promptCopied}
+                onCopyReport={() => void copyReport()}
+                onCopyPrompt={() => void copyAiPrompt()}
+                onRerun={() => void run(value)}
+              />
               </div>
             </div>
 
@@ -418,10 +623,12 @@ export default function AuditClient({ query }: { query: string }) {
                 </div>
               </div>
             </div>
+
+            <CategoryRings report={report} />
           </header>
 
           {report.fixFirst.length > 0 && (
-            <section>
+            <section id="audit-fix-first" className="scroll-mt-28">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warning" aria-hidden />
                 <h2 className="text-subhead font-semibold">Fix first</h2>
@@ -445,6 +652,8 @@ export default function AuditClient({ query }: { query: string }) {
               return (
                 <Disclosure
                   key={cat.id}
+                  id={`audit-${cat.id}`}
+                  className="scroll-mt-28"
                   defaultOpen
                   contentClassName="divide-y"
                   trigger={

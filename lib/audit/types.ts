@@ -1,6 +1,6 @@
 export type CheckStatus = "pass" | "warn" | "fail"
 
-export type AuditCategoryId = "onpage" | "crawl" | "trust" | "ai"
+export type AuditCategoryId = "onpage" | "crawl" | "trust" | "ai" | "aeo"
 
 export type AuditCheck = {
   id: string

@@ -25,6 +25,7 @@ export type RobotsGroup = {
   agents: string[]
   rules: RobotsRule[]
   crawlDelay?: number
+  contentSignals?: ContentSignals
   startLine: number
 }
 
@@ -41,6 +42,8 @@ export type RobotsParsed = {
   groups: RobotsGroup[]
   sitemaps: string[]
   issues: RobotsIssue[]
+  /** Content Signals from the `*` group, if the site declares them */
+  contentSignals?: ContentSignals
   /** true when the file has no groups at all (everything is allowed) */
   empty: boolean
 }
@@ -56,7 +59,32 @@ const KNOWN_DIRECTIVES = new Set([
   "clean-param",
   "request-rate",
   "visit-time",
+  // Cloudflare's Content Signals Policy: declares permitted *uses* of content
+  // that a crawler is otherwise allowed to fetch.
+  "content-signal",
 ])
+
+export type ContentSignals = {
+  /** Appear in a traditional search index */
+  search?: boolean
+  /** Be used as grounding/RAG input for an AI answer */
+  "ai-input"?: boolean
+  /** Be used as model training data */
+  "ai-train"?: boolean
+  raw: string
+}
+
+function parseContentSignal(value: string): ContentSignals {
+  const signals: ContentSignals = { raw: value }
+  for (const part of value.split(",")) {
+    const [rawKey, rawVal] = part.split("=").map((s) => s?.trim().toLowerCase())
+    if (!rawKey || rawVal === undefined) continue
+    if (rawKey === "search" || rawKey === "ai-input" || rawKey === "ai-train") {
+      signals[rawKey] = rawVal === "yes"
+    }
+  }
+  return signals
+}
 
 export function parseRobots(text: string): RobotsParsed {
   const groups: RobotsGroup[] = []
@@ -204,6 +232,21 @@ export function parseRobots(text: string): RobotsParsed {
       return
     }
 
+    if (field === "content-signal") {
+      if (!current) {
+        issues.push({
+          level: "warning",
+          line: lineNo,
+          message: "Content-Signal appears before any User-agent",
+          raw: rawLine.trim(),
+        })
+        return
+      }
+      acceptingAgents = false
+      current.contentSignals = parseContentSignal(value)
+      return
+    }
+
     if (field === "noindex") {
       issues.push({
         level: "warning",
@@ -219,6 +262,8 @@ export function parseRobots(text: string): RobotsParsed {
     groups,
     sitemaps,
     issues,
+    contentSignals: groups.find((g) => g.agents.some((a) => a.trim() === "*"))
+      ?.contentSignals,
     empty: groups.length === 0,
   }
 }
