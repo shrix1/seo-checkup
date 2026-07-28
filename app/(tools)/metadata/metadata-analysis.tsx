@@ -14,6 +14,8 @@ const TONE: Record<CheckStatus, { bar: string; text: string }> = {
   pass: { bar: "bg-success", text: "text-success" },
   warn: { bar: "bg-warning", text: "text-warning" },
   fail: { bar: "bg-danger", text: "text-danger" },
+  // A measured snippet always grades, so this is only here to satisfy the map.
+  info: { bar: "bg-muted-foreground", text: "text-muted-foreground" },
 }
 
 export function SnippetGauge({
