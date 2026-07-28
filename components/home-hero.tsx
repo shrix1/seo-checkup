@@ -6,6 +6,7 @@ import { StatusDot } from "@/components/status"
 import ToolCard from "@/components/tool-card"
 import type { CheckStatus } from "@/lib/audit/types"
 import { features } from "@/lib/site"
+import { Bing, Claude, Google, OpenAI, Perplexity } from "@lobehub/icons"
 import {
   AreaChart,
   Bot,
@@ -21,6 +22,18 @@ import {
 import Link from "next/link"
 
 const DEMO = "shrix1.com"
+
+/**
+ * The engines the audit genuinely tests for: Googlebot and Bingbot for search,
+ * and the answer-engine crawlers whose access decides whether you can be cited.
+ */
+const engines = [
+  { name: "Google", icon: Google },
+  { name: "Bing", icon: Bing },
+  { name: "ChatGPT", icon: OpenAI },
+  { name: "Claude", icon: Claude },
+  { name: "Perplexity", icon: Perplexity },
+]
 
 const tools = [
   {
@@ -153,6 +166,25 @@ export default function HomeHero() {
               <li aria-hidden>·</li>
               <li>Results in seconds</li>
             </ul>
+
+            {/* Not decoration — these are the crawlers the audit actually
+                tests access and citability for. */}
+            <div className="mt-12 flex flex-col items-center gap-4 border-t pt-8">
+              <p className="text-label font-medium uppercase text-muted-foreground">
+                Checks your visibility to
+              </p>
+              <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-muted-foreground">
+                {engines.map((engine) => (
+                  <li
+                    key={engine.name}
+                    className="inline-flex items-center gap-2 text-sm"
+                  >
+                    <engine.icon size={18} aria-hidden />
+                    {engine.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </FadeIn>
         </Container>
       </section>
