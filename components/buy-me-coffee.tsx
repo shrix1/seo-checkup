@@ -59,10 +59,10 @@ export default function BuyMeCoffee() {
         href="https://www.buymeacoffee.com/shrix1"
         target="_blank"
         rel="noopener noreferrer"
-        className="bg-[#FFDD00] hover:bg-[#FFDD00]/90 p-3 rounded-full shadow-lg transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:scale-110"
+        className="bg-primary hover:bg-primary/90 p-3 rounded-full shadow-lg transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:scale-110"
         aria-label="Buy me a coffee"
       >
-        <Coffee className="w-6 h-6 text-black" />
+        <Coffee className="w-6 h-6 text-primary-foreground" />
       </a>
     </div>
   )
