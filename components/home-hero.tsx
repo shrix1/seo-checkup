@@ -13,13 +13,14 @@ import {
   FileSearch,
   Globe2,
   Shield,
+  MessageSquareQuote,
   Stethoscope,
   TrendingUp,
 } from "lucide-react"
 // Bot is used for both the Robots tool tile and the AI category card.
 import Link from "next/link"
 
-const DEMO = "https://shrix1.com"
+const DEMO = "shrix1.com"
 
 const tools = [
   {
@@ -84,10 +85,17 @@ const categories = [
   },
   {
     icon: Bot,
-    label: "AI & answer engines",
+    label: "AI crawler access",
     count: 3,
     items:
-      "Whether ChatGPT, Claude and Perplexity search crawlers can cite you, assistant fetch access, and llms.txt",
+      "Whether ChatGPT, Claude and Perplexity search crawlers can reach you, assistant fetch access, and your declared content-usage policy",
+  },
+  {
+    icon: MessageSquareQuote,
+    label: "Answer engines (AEO)",
+    count: 8,
+    items:
+      "Markdown twin, llms.txt, whether your copy survives without JavaScript, answer-ready schema, question-shaped headings, linkable sections, freshness and author signals",
   },
 ]
 
@@ -127,9 +135,9 @@ export default function HomeHero() {
               Every technical SEO check, unlocked.
             </h1>
             <p className="mt-4 max-w-xl text-subhead text-muted-foreground">
-              Paste any URL — a homepage or a deep page — for 35 checks across
-              on-page signals, crawl access, security, and AI answer engines.
-              Every result shows its real value and how to fix it.
+              Paste any URL — a homepage or a deep page — for 43 checks across
+              on-page signals, crawl access, security, AI crawler access, and
+              how citable you are to answer engines.
             </p>
 
             <div className="mt-8 w-full max-w-xl">
@@ -137,7 +145,7 @@ export default function HomeHero() {
             </div>
 
             <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              <li>35 checks</li>
+              <li>43 checks</li>
               <li aria-hidden>·</li>
               <li>No account</li>
               <li aria-hidden>·</li>
@@ -154,9 +162,17 @@ export default function HomeHero() {
         <Container width="page" className="py-16 md:py-20">
           <h2 className="text-heading font-semibold">What the audit checks</h2>
           <p className="mt-2 max-w-xl text-body text-muted-foreground">
-            Four categories, scored separately so you know where the damage is.
+            Five categories, scored separately so you know where the damage is.
+            New to the acronyms?{" "}
+            <Link
+              href="/learn"
+              className="text-link underline underline-offset-2"
+            >
+              SEO, PSEO, AEO and GEO explained
+            </Link>
+            .
           </p>
-          <StaggerChildren className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerChildren className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {categories.map((cat) => (
               <StaggerItem key={cat.label}>
                 <div className="h-full rounded-lg border bg-background p-5">

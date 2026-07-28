@@ -80,18 +80,27 @@ const Navbar = () => {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <Link
-            href="/blog"
-            aria-current={pathname.startsWith("/blog") ? "page" : undefined}
-            className={cn(
-              "hidden rounded-md px-2.5 py-1.5 text-sm transition-colors sm:block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              pathname.startsWith("/blog")
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Blog
-          </Link>
+          {[
+            { href: "/learn", label: "Learn" },
+            { href: "/blog", label: "Blog" },
+          ].map((item) => {
+            const active = pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "hidden rounded-md px-2.5 py-1.5 text-sm transition-colors sm:block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
 
           {/* Styled as links rather than <Button asChild> — an anchor is the
               correct element here, and it avoids Radix's Slot wrapper. */}
@@ -159,17 +168,23 @@ const Navbar = () => {
                 </Link>
               )
             })}
-            <Link
-              href="/blog"
-              className={cn(
-                "rounded-md px-2 py-2.5 text-sm transition-colors sm:hidden",
-                pathname.startsWith("/blog")
-                  ? "text-primary"
-                  : "text-muted-foreground hover:bg-surface-1 hover:text-foreground"
-              )}
-            >
-              Blog
-            </Link>
+            {[
+              { href: "/learn", label: "Learn" },
+              { href: "/blog", label: "Blog" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "rounded-md px-2 py-2.5 text-sm transition-colors sm:hidden",
+                  pathname.startsWith(item.href)
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-surface-1 hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
       )}

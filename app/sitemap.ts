@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: features.sitemap.toolPath, priority: 0.8 },
     { path: features.metadata.toolPath, priority: 0.8 },
     { path: features.robots.toolPath, priority: 0.8 },
+    { path: "/learn", priority: 0.8 },
     { path: "/blog", priority: 0.75 },
   ]
 
