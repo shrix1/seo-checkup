@@ -65,6 +65,11 @@ const Footer = () => {
               Guides
             </h2>
             <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <Link href="/learn" className={linkClass}>
+                  SEO vs PSEO vs AEO vs GEO
+                </Link>
+              </li>
               {order.map((key) => (
                 <li key={key}>
                   <Link
