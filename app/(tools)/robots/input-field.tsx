@@ -1,18 +1,28 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+import Container from "@/components/container"
 import { FadeIn } from "@/components/motion"
-import { Check, Copy, Loader } from "lucide-react"
+import ToolSearchForm, {
+  ToolError,
+  ToolExample,
+} from "@/components/tool-search-form"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { parseRobots } from "@/lib/robots-parser"
+import { Check, Copy, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  AiCrawlerMatrix,
+  RobotsGroups,
+  RobotsIssues,
+  RobotsUrlTester,
+} from "./robots-analysis"
 
 const DEFAULT_ROBOTS = "https://shrix1.com/robots.txt"
 
-const DIRECTIVE =
-  /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host)\s*:/i
+const DIRECTIVE = /^(User-agent|Disallow|Allow|Sitemap|Crawl-delay|Host)\s*:/i
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_ROBOTS
@@ -26,7 +36,7 @@ function initialQuery(query: string) {
 function HighlightedRobots({ text }: { text: string }) {
   const lines = text.split(/\r?\n/)
   return (
-    <pre className="text-left text-sm font-mono whitespace-pre-wrap break-words p-4 rounded-lg border bg-muted/40 max-w-3xl w-full overflow-x-auto">
+    <pre className="w-full overflow-x-auto rounded-lg border bg-surface-2 p-4 text-left font-mono text-sm leading-relaxed">
       {lines.map((line, i) => {
         const trimmed = line.trim()
         const isDirective = DIRECTIVE.test(trimmed)
@@ -36,18 +46,20 @@ function HighlightedRobots({ text }: { text: string }) {
             key={i}
             className={
               isComment
-                ? "text-muted-foreground"
+                ? "text-muted-foreground/70"
                 : isDirective
                   ? "text-foreground"
-                  : "text-muted-foreground/90"
+                  : "text-muted-foreground"
             }
           >
             {isDirective ? (
               <>
-                <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                <span className="font-medium text-primary">
                   {trimmed.split(":")[0]}:
                 </span>
-                <span>{trimmed.slice(trimmed.indexOf(":") + 1)}</span>
+                <span className="whitespace-pre-wrap break-all">
+                  {trimmed.slice(trimmed.indexOf(":") + 1)}
+                </span>
               </>
             ) : (
               line || " "
@@ -65,21 +77,28 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   const [value, setValue] = useState(initial)
   const [body, setBody] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const hasFetched = useRef(false)
 
+  const parsed = useMemo(() => parseRobots(body ?? ""), [body])
+  const origin = useMemo(() => {
+    try {
+      return new URL(initial).origin
+    } catch {
+      return ""
+    }
+  }, [initial])
+
   const fetchRobots = useCallback(async (url: string) => {
     if (!url) {
-      setError(true)
+      setError("Enter a robots.txt URL")
       return
     }
     try {
       setLoading(true)
-      setError(false)
-      const res = await fetch(
-        `/api/v1?q=${encodeURIComponent(url)}&tool=ROBOTS`
-      )
+      setError(null)
+      const res = await fetch(`/api/v1?q=${encodeURIComponent(url)}&tool=ROBOTS`)
       const json = await res.json()
 
       if (res.status === 429 || json.error === "Rate limit exceeded") {
@@ -88,13 +107,13 @@ const InputFieldRobots = ({ query }: { query: string }) => {
           typeof resetMs === "number"
             ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
             : "?"
-        alert(`You reached the limit, try again in ${hours} hours or later`)
-        setError(true)
+        setError(`Rate limit exceeded. Try again in ${hours} hours.`)
+        setBody(null)
         return
       }
 
       if (!res.ok || typeof json !== "string") {
-        setError(true)
+        setError(`Could not load robots.txt from ${url}`)
         setBody(null)
         return
       }
@@ -102,7 +121,7 @@ const InputFieldRobots = ({ query }: { query: string }) => {
       setBody(json)
     } catch (err) {
       console.error("Error fetching robots.txt:", err)
-      setError(true)
+      setError(`Could not load robots.txt from ${url}`)
       setBody(null)
     } finally {
       setLoading(false)
@@ -115,7 +134,7 @@ const InputFieldRobots = ({ query }: { query: string }) => {
     void fetchRobots(initial)
   }, [fetchRobots, initial])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (value === initial) {
       await fetchRobots(value)
@@ -132,73 +151,112 @@ const InputFieldRobots = ({ query }: { query: string }) => {
   }
 
   return (
-    <div className="w-full flex justify-center flex-col items-center px-4 md:px-0">
-      <form
+    <Container width="reading" className="mt-10">
+      <ToolSearchForm
+        value={value}
+        onChange={setValue}
         onSubmit={handleSubmit}
-        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
-      >
-        <Input
-          onChange={(e) => setValue(e.target.value)}
-          value={value}
-          type="text"
-          autoFocus
-          placeholder="yoursite.com/robots.txt"
-          className="text-base h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
-        />
-      </form>
-      <p className="text-sm text-muted-foreground -mt-6 mb-10">
-        example:{" "}
-        <Link href="https://shrix1.com/robots.txt" target="_blank">
-          <span className="font-medium text-foreground">
-            https://shrix1.com/robots.txt
-          </span>
-        </Link>
-      </p>
+        placeholder="yoursite.com/robots.txt"
+        ariaLabel="robots.txt URL to inspect"
+        loading={loading}
+        buttonLabel="Fetch robots.txt"
+        loadingLabel="Fetching…"
+        autoFocus
+      />
+      <ToolExample
+        url={DEFAULT_ROBOTS}
+        onPick={() => {
+          setValue(DEFAULT_ROBOTS)
+          if (DEFAULT_ROBOTS === initial) {
+            void fetchRobots(DEFAULT_ROBOTS)
+            return
+          }
+          router.replace(`/robots?q=${encodeURIComponent(DEFAULT_ROBOTS)}`)
+        }}
+      />
+
+      {error && <ToolError>{error}</ToolError>}
 
       {loading ? (
-        <div className="w-full max-w-3xl space-y-3">
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <Loader className="animate-spin h-4 w-4" />
-            Loading robots.txt…
-          </div>
+        <div className="mt-10 space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-5 w-full" />
           ))}
-        </div>
-      ) : error || body === null ? (
-        <div className="px-3 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-3 bg-red-100 text-red-600 rounded-lg">
-          <p>
-            Could not load robots.txt from{" "}
-            <span className="underline font-medium">{value}</span>.
-          </p>
+          <span className="sr-only">Loading robots.txt</span>
         </div>
       ) : (
-        <FadeIn className="w-full flex flex-col items-center gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className="gap-2"
-            disabled={!body}
-          >
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
+        body !== null && (
+          <FadeIn className="mt-10 space-y-10">
+            <RobotsUrlTester parsed={parsed} origin={origin} />
+
+            <AiCrawlerMatrix parsed={parsed} />
+
+            {parsed.sitemaps.length > 0 && (
+              <section>
+                <h2 className="text-subhead font-semibold">
+                  Sitemaps declared
+                </h2>
+                <ul className="mt-3 divide-y rounded-lg border">
+                  {parsed.sitemaps.map((sitemap) => (
+                    <li
+                      key={sitemap}
+                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+                    >
+                      <span className="min-w-0 break-all font-mono text-sm">
+                        {sitemap}
+                      </span>
+                      <Link
+                        href={`/sitemap?q=${encodeURIComponent(sitemap)}`}
+                        className="inline-flex shrink-0 items-center gap-1 text-xs text-link underline underline-offset-2"
+                      >
+                        Expand it <ExternalLink className="h-3 w-3" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-            {copied ? "Copied" : "Copy robots.txt"}
-          </Button>
-          {body.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono">
-              robots.txt is empty (valid response).
-            </p>
-          ) : (
-            <HighlightedRobots text={body} />
-          )}
-        </FadeIn>
+
+            <RobotsGroups parsed={parsed} />
+
+            <RobotsIssues issues={parsed.issues} />
+
+            <section>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-subhead font-semibold">Raw file</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={!body}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+              {body.length === 0 ? (
+                <p className="rounded-lg border bg-surface-1 px-4 py-3 text-sm text-muted-foreground">
+                  robots.txt is empty, which is a valid response — everything is
+                  crawlable.
+                </p>
+              ) : (
+                <HighlightedRobots text={body} />
+              )}
+            </section>
+          </FadeIn>
+        )
       )}
-    </div>
+    </Container>
   )
 }
 

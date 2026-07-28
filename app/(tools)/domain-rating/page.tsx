@@ -2,7 +2,7 @@ import React from "react"
 import { TrendingUp } from "lucide-react"
 import type { Metadata } from "next"
 import { constructMetadata } from "@/lib/utils"
-import { FadeIn } from "@/components/motion"
+import ToolShell from "@/components/tool-shell"
 import { safeDecodeURIComponent } from "@/lib/safe-decode"
 import DomainRatingClient from "./domain-rating-client"
 import JsonLd from "@/components/json-ld"
@@ -44,26 +44,14 @@ export default async function DomainRatingPage({
   const query = safeDecodeURIComponent(q)
 
   return (
-    <div className="min-h-screen max-h-full flex items-center flex-col pb-16 px-4 md:px-0">
+    <ToolShell
+      icon={TrendingUp}
+      title="Domain Rating Checker"
+      description="Free Ahrefs Domain Rating lookup. No API key required."
+    >
       <JsonLd data={appJsonLd} />
-      <FadeIn>
-        <section className="flex justify-center flex-col items-center gap-4 mt-3">
-          <div
-            className="w-11 h-11 flex justify-center items-center rounded-lg
-         bg-gradient-to-br from-secondary via-black/20 to-secondary/20 dark:from-primary/30 dark:via-primary/50 dark:to-primary text-black backdrop-blur-md"
-          >
-            <TrendingUp />
-          </div>
-          <h2 className="text-center text-2xl font-semibold">
-            Domain Rating Checker
-          </h2>
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            Free Ahrefs Domain Rating lookup. No API key required.
-          </p>
-        </section>
-      </FadeIn>
       <DomainRatingClient key={query || "default"} query={query} />
       <ToolRelatedLinks feature="domainRating" />
-    </div>
+    </ToolShell>
   )
 }

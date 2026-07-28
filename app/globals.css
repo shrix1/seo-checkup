@@ -3,30 +3,51 @@
 @tailwind utilities;
 
 ::selection {
-  @apply bg-blue-400 text-white dark:bg-white/50 dark:text-black;
+  @apply bg-primary/20 text-foreground;
 }
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 240 10% 8%;
+
+    /* Surface ladder — elevation via surface + hairline, not shadow */
+    --surface-1: 240 20% 99%;
+    --surface-2: 240 14% 96%;
+
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 10% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
+    --popover-foreground: 240 10% 8%;
+
+    /* Signal blue — the single accent */
+    --primary: 217 91% 53%;
+    --primary-foreground: 0 0% 100%;
+    --link: 217 92% 45%;
+
+    --secondary: 240 14% 96%;
+    --secondary-foreground: 240 10% 12%;
+    --muted: 240 14% 96%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 240 14% 96%;
+    --accent-foreground: 240 10% 12%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Status triad — reserved exclusively for check results */
+    --success: 152 62% 33%;
+    --success-subtle: 150 60% 96%;
+    --warning: 32 88% 40%;
+    --warning-subtle: 40 90% 96%;
+    --danger: 0 72% 46%;
+    --danger-subtle: 0 85% 97%;
+
+    --border: 240 12% 90%;
+    --border-strong: 240 10% 82%;
+    --input: 240 12% 90%;
+    --ring: 217 91% 53%;
+
     --radius: 0.5rem;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --duration-fast: 150ms;
@@ -34,25 +55,44 @@
   }
 
   .dark {
-    --background: 0 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
+    --background: 240 10% 3.5%;
+    --foreground: 240 10% 97%;
+
+    --surface-1: 240 8% 7%;
+    --surface-2: 240 7% 11%;
+
+    --card: 240 8% 7%;
+    --card-foreground: 240 10% 97%;
+    --popover: 240 8% 7%;
+    --popover-foreground: 240 10% 97%;
+
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
+    --link: 214 100% 72%;
+
+    --secondary: 240 7% 13%;
+    --secondary-foreground: 240 10% 97%;
+    --muted: 240 7% 13%;
+    --muted-foreground: 240 6% 62%;
+    --accent: 240 7% 13%;
+    --accent-foreground: 240 10% 97%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 52%;
+    --success-subtle: 152 40% 12%;
+    --warning: 38 92% 58%;
+    --warning-subtle: 38 50% 12%;
+    --danger: 0 84% 65%;
+    --danger-subtle: 0 50% 13%;
+
+    --border: 240 8% 16%;
+    --border-strong: 240 7% 24%;
+    --input: 240 8% 16%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.5rem;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --duration-fast: 150ms;
     --duration-normal: 250ms;
@@ -75,5 +115,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Numerals in data positions stay tabular so they don't jitter */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

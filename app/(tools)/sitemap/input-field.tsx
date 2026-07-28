@@ -1,16 +1,16 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+import Container from "@/components/container"
 import { FadeIn } from "@/components/motion"
-import {
-  compareUrls,
-  getSitemapBaseUrl,
-  removeCommonPrefix,
-} from "@/lib/utils"
-import { Check, Copy, Loader } from "lucide-react"
+import ToolSearchForm, {
+  ToolError,
+  ToolExample,
+} from "@/components/tool-search-form"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { ExpandResult, SitemapEntry } from "@/lib/sitemap-types"
+import { cn, compareUrls, getSitemapBaseUrl } from "@/lib/utils"
+import { Check, Copy, List, Rows3 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
@@ -18,25 +18,11 @@ import {
   restructureSitemap,
   sortSitemapStructure,
 } from "./generate-deep-routes"
+import { SitemapTable, SitemapValidationPanel } from "./sitemap-analysis"
 
 const DEFAULT_SITEMAP = "https://shrix1.com/sitemap.xml"
 
-type SitemapSource = {
-  sitemapUrl: string
-  urlCount: number
-  urls: string[]
-  error?: string
-}
-
-type ExpandResult = {
-  indexUrl: string
-  urls: string[]
-  rootKind: "urlset" | "sitemapindex" | "unknown"
-  sources: SitemapSource[]
-  childSitemapsFetched: number
-  childSitemapsFailed: { url: string; reason: string }[]
-  truncated: boolean
-}
+type ViewMode = "tree" | "table"
 
 function initialQuery(query: string) {
   if (!query) return DEFAULT_SITEMAP
@@ -57,22 +43,23 @@ function sourceLabel(sitemapUrl: string): string {
   }
 }
 
-function buildView(urls: string[], base: string) {
-  const sortedUrls = [...urls].sort(compareUrls)
-  const modifiedUrls = sortedUrls.map((url) => removeCommonPrefix(url, base))
+function buildView(entries: SitemapEntry[]) {
+  const sorted = [...entries].sort((a, b) => compareUrls(a.loc, b.loc))
+  const sortedUrls = sorted.map((e) => e.loc)
   const deep = sortSitemapStructure(restructureSitemap(sortedUrls))
-  return { modifiedUrls, sortedUrls, deep }
+  return { entries: sorted, sortedUrls, deep }
 }
 
 const InputField = ({ query }: { query: string }) => {
   const router = useRouter()
   const initial = useMemo(() => initialQuery(query), [query])
   const [value, setValue] = useState(initial)
-  const [data, setData] = useState<string[]>([])
   const [rawUrls, setRawUrls] = useState<string[]>([])
+  const [entries, setEntries] = useState<SitemapEntry[]>([])
+  const [view, setView] = useState<ViewMode>("tree")
   const [baseUrl, setBaseUrl] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [resultsReady, setResultsReady] = useState(false)
   const [expandResult, setExpandResult] = useState<ExpandResult | null>(null)
@@ -83,23 +70,25 @@ const InputField = ({ query }: { query: string }) => {
   const hasFetched = useRef(false)
 
   const applySourceFilter = useCallback(
-    (expanded: ExpandResult, sourceKey: string, base: string) => {
-      const urls =
+    (expanded: ExpandResult, sourceKey: string) => {
+      const scoped =
         sourceKey === "all"
-          ? expanded.urls
-          : (expanded.sources.find((s) => s.sitemapUrl === sourceKey)?.urls ??
+          ? expanded.entries
+          : (expanded.sources.find((s) => s.sitemapUrl === sourceKey)?.entries ??
             [])
-      const view = buildView(urls, base)
-      setData(view.modifiedUrls)
-      setRawUrls(view.sortedUrls)
-      setSitemapWithDeepRoutes(view.deep)
-      setResultsReady(view.sortedUrls.length > 0 || sourceKey !== "all")
+      const next = buildView(scoped)
+      setEntries(next.entries)
+      setRawUrls(next.sortedUrls)
+      setSitemapWithDeepRoutes(next.deep)
+      setResultsReady(next.sortedUrls.length > 0 || sourceKey !== "all")
     },
     []
   )
 
   const fetchExpandedSitemap = useCallback(
-    async (url: string): Promise<ExpandResult | null> => {
+    async (
+      url: string
+    ): Promise<{ result: ExpandResult | null; error?: string }> => {
       try {
         const res = await fetch(`/api/sitemap?q=${encodeURIComponent(url)}`)
         const json = await res.json()
@@ -110,18 +99,27 @@ const InputField = ({ query }: { query: string }) => {
             typeof resetMs === "number"
               ? Math.max(1, Math.ceil((resetMs - Date.now()) / 3_600_000))
               : "?"
-          alert(`You reached the limit, try again in ${hours} hours or later`)
-          return null
+          return {
+            result: null,
+            error: `Rate limit exceeded. Try again in ${hours} hours.`,
+          }
         }
 
-        if (!res.ok || !Array.isArray(json.urls) || !Array.isArray(json.sources)) {
-          return null
+        if (
+          !res.ok ||
+          !Array.isArray(json.urls) ||
+          !Array.isArray(json.sources)
+        ) {
+          return {
+            result: null,
+            error: json.error || `Could not expand a sitemap at ${url}`,
+          }
         }
 
-        return json as ExpandResult
+        return { result: json as ExpandResult }
       } catch (err) {
         console.error("Error fetching expanded sitemap:", err)
-        return null
+        return { result: null, error: `Could not expand a sitemap at ${url}` }
       }
     },
     []
@@ -130,34 +128,34 @@ const InputField = ({ query }: { query: string }) => {
   const getUrls = useCallback(
     async (target: string) => {
       if (!target) {
-        setError(true)
-        return null
+        setError("Enter a sitemap URL")
+        setLoading(false)
+        return
       }
-      try {
-        setLoading(true)
-        setResultsReady(false)
-        const expanded = await fetchExpandedSitemap(target)
-        if (!expanded) {
-          setError(true)
-          setLoading(false)
-          setExpandResult(null)
-          return null
-        }
+      setLoading(true)
+      setError(null)
+      setResultsReady(false)
 
-        const base = getSitemapBaseUrl(target)
-        setBaseUrl(base)
-        setExpandResult(expanded)
-        setSelectedSource("all")
-        applySourceFilter(expanded, "all", base)
-        setError(expanded.urls.length === 0)
-        setLoading(false)
-        return expanded
-      } catch {
-        setLoading(false)
-        setError(true)
+      const { result: expanded, error: fetchError } =
+        await fetchExpandedSitemap(target)
+
+      if (!expanded) {
+        setError(fetchError || `Could not expand a sitemap at ${target}`)
         setExpandResult(null)
-        return null
+        setRawUrls([])
+        setLoading(false)
+        return
       }
+
+      const base = getSitemapBaseUrl(target)
+      setBaseUrl(base)
+      setExpandResult(expanded)
+      setSelectedSource("all")
+      applySourceFilter(expanded, "all")
+      if (expanded.urls.length === 0) {
+        setError(`No URLs found in ${target}`)
+      }
+      setLoading(false)
     },
     [applySourceFilter, fetchExpandedSitemap]
   )
@@ -168,7 +166,7 @@ const InputField = ({ query }: { query: string }) => {
     void getUrls(initial)
   }, [getUrls, initial])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (value === initial) {
       await getUrls(value)
@@ -180,7 +178,7 @@ const InputField = ({ query }: { query: string }) => {
   const handleSourceChange = (sourceKey: string) => {
     setSelectedSource(sourceKey)
     if (!expandResult) return
-    applySourceFilter(expandResult, sourceKey, baseUrl)
+    applySourceFilter(expandResult, sourceKey)
   }
 
   const handleCopy = async () => {
@@ -191,13 +189,10 @@ const InputField = ({ query }: { query: string }) => {
   }
 
   const showSourceFilter =
-    expandResult?.rootKind === "sitemapindex" &&
-    expandResult.sources.length > 0
+    expandResult?.rootKind === "sitemapindex" && expandResult.sources.length > 0
 
   const selectedSourceUrl =
-    selectedSource === "all"
-      ? expandResult?.indexUrl
-      : selectedSource
+    selectedSource === "all" ? expandResult?.indexUrl : selectedSource
 
   const selectedSourceMeta =
     selectedSource === "all"
@@ -205,178 +200,216 @@ const InputField = ({ query }: { query: string }) => {
       : expandResult?.sources.find((s) => s.sitemapUrl === selectedSource)
 
   return (
-    <div className="w-full flex justify-center flex-col items-center px-4 md:px-0">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full md:w-[400px] flex justify-center my-6 items-center h-[60px] sticky top-4 rounded-lg"
-      >
-        <Input
-          onChange={(e) => setValue(e.target.value)}
+    <Container width="page" className="mt-10">
+      <div className="mx-auto max-w-3xl">
+        <ToolSearchForm
           value={value}
-          type="text"
-          autoFocus
+          onChange={setValue}
+          onSubmit={handleSubmit}
           placeholder="yoursite.com/sitemap.xml"
-          className="text-base h-[50px] dark:bg-white font-mono text-white dark:text-black bg-black"
+          ariaLabel="Sitemap URL to expand"
+          loading={loading}
+          buttonLabel="Expand sitemap"
+          loadingLabel="Expanding…"
+          autoFocus
         />
-      </form>
-      <p className="text-sm text-muted-foreground -mt-6 mb-10">
-        Ensure your{" "}
-        <span className="font-medium text-foreground">sitemap.xml</span> URL is
-        correct before using it. Sitemap indexes are expanded automatically.
-      </p>
+        <ToolExample
+          url={DEFAULT_SITEMAP}
+          onPick={() => {
+            setValue(DEFAULT_SITEMAP)
+            if (DEFAULT_SITEMAP === initial) {
+              void getUrls(DEFAULT_SITEMAP)
+              return
+            }
+            router.replace(`/sitemap?q=${encodeURIComponent(DEFAULT_SITEMAP)}`)
+          }}
+        />
 
-      {loading ? (
-        <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <Loader className="animate-spin h-4 w-4" />
-            Expanding sitemap…
-          </div>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-full" />
+        {error && <ToolError>{error}</ToolError>}
+      </div>
+
+      {loading && (
+        <div className="mx-auto mt-10 max-w-3xl space-y-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-7 w-full" />
           ))}
+          <span className="sr-only">Expanding sitemap</span>
         </div>
-      ) : error || !expandResult || expandResult.urls.length === 0 ? (
-        <div className="px-3 flex items-center justify-center mt-4 w-full md:w-[400px] gap-4 py-3 bg-red-100 text-red-600 rounded-lg">
-          <p>
-            It seems like the sitemap url:{" "}
-            <span className="underline font-medium">{value}</span> does not
-            exist or try refreshing.
-          </p>
-        </div>
-      ) : (
-        <FadeIn className="w-full max-w-5xl flex flex-col items-center">
-          <section className="flex flex-col md:flex-row gap-3 items-center mb-3 flex-wrap justify-center">
-            <Badge className="underline font-medium font-mono text-base underline-offset-2">
-              {baseUrl}
-            </Badge>
-            <span className="text-sm">
-              {rawUrls.length.toLocaleString()} URL
-              {rawUrls.length === 1 ? "" : "s"} found
-              <Badge className="ml-2 font-medium font-mono text-base">
-                {rawUrls.length.toLocaleString()}
-              </Badge>
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="gap-2"
-              disabled={!rawUrls.length}
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              {copied ? "Copied" : "Copy URLs"}
-            </Button>
-          </section>
+      )}
 
-          {expandResult && (
-            <div className="w-full max-w-xl flex flex-col items-center gap-3 mb-6 px-2">
-              <p className="text-sm text-muted-foreground text-center break-all">
-                <span className="font-medium text-foreground">
+      {!loading && expandResult && rawUrls.length > 0 && (
+        <FadeIn className="mt-10">
+          {/* Summary bar */}
+          <div className="rounded-lg border bg-surface-1">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-label font-medium uppercase text-muted-foreground">
                   {expandResult.rootKind === "sitemapindex"
-                    ? "Index:"
-                    : "Sitemap:"}
-                </span>{" "}
+                    ? "Sitemap index"
+                    : "Sitemap"}
+                </p>
                 <a
                   href={expandResult.indexUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono underline underline-offset-2 hover:text-foreground"
+                  className="mt-0.5 block truncate font-mono text-sm underline underline-offset-2 transition-colors hover:text-foreground"
                 >
                   {expandResult.indexUrl}
                 </a>
-              </p>
-
-              {showSourceFilter && (
-                <>
-                  <label className="w-full flex flex-col gap-1.5 text-sm">
-                    <span className="text-muted-foreground text-center">
-                      Filter by child sitemap
-                    </span>
-                    <select
-                      value={selectedSource}
-                      onChange={(e) => handleSourceChange(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="all">
-                        All sitemaps ({expandResult.urls.length.toLocaleString()}
-                        )
-                      </option>
-                      {expandResult.sources.map((source) => (
-                        <option
-                          key={source.sitemapUrl}
-                          value={source.sitemapUrl}
-                          title={source.sitemapUrl}
-                        >
-                          {sourceLabel(source.sitemapUrl)} (
-                          {source.error
-                            ? "failed"
-                            : source.urlCount.toLocaleString()}
-                          )
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  {selectedSourceUrl && (
-                    <p className="text-xs text-muted-foreground text-center break-all">
-                      <span className="font-medium text-foreground">
-                        {selectedSource === "all" ? "Showing:" : "Source:"}
-                      </span>{" "}
-                      <a
-                        href={selectedSourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono underline underline-offset-2 hover:text-foreground"
-                      >
-                        {selectedSourceUrl}
-                      </a>
-                      {selectedSourceMeta?.error
-                        ? ` — ${selectedSourceMeta.error}`
-                        : ""}
-                    </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  <span className="font-mono font-medium text-foreground tabular">
+                    {rawUrls.length.toLocaleString()}
+                  </span>{" "}
+                  URL{rawUrls.length === 1 ? "" : "s"}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={!rawUrls.length}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copy URLs
+                    </>
                   )}
-                </>
-              )}
-
-              {(expandResult.truncated ||
-                expandResult.childSitemapsFailed.length > 0) && (
-                <p className="text-xs text-muted-foreground text-center">
-                  {expandResult.childSitemapsFailed.length > 0
-                    ? `${expandResult.childSitemapsFailed.length} child sitemap(s) failed`
-                    : ""}
-                  {expandResult.truncated
-                    ? `${expandResult.childSitemapsFailed.length > 0 ? " · " : ""}truncated at limit`
-                    : ""}
-                </p>
-              )}
+                </Button>
+              </div>
             </div>
-          )}
 
-          {resultsReady && rawUrls.length > 0 && (
-            <div className="flex flex-wrap gap-3 max-w-5xl">
-              <SitemapToJSX
-                sitemap={sitemapWithDeepRoutes}
-                baseUrl={baseUrl}
-              />
-            </div>
-          )}
+            {showSourceFilter && (
+              <div className="flex flex-wrap items-center gap-3 border-t px-4 py-3">
+                <label
+                  htmlFor="sitemap-source"
+                  className="text-sm text-muted-foreground"
+                >
+                  Filter by child sitemap
+                </label>
+                <select
+                  id="sitemap-source"
+                  value={selectedSource}
+                  onChange={(e) => handleSourceChange(e.target.value)}
+                  className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 font-mono text-sm transition-colors hover:border-border-strong focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 sm:max-w-sm"
+                >
+                  <option value="all">
+                    All sitemaps ({expandResult.urls.length.toLocaleString()})
+                  </option>
+                  {expandResult.sources.map((source) => (
+                    <option
+                      key={source.sitemapUrl}
+                      value={source.sitemapUrl}
+                      title={source.sitemapUrl}
+                    >
+                      {sourceLabel(source.sitemapUrl)} (
+                      {source.error ? "failed" : source.urlCount.toLocaleString()}
+                      )
+                    </option>
+                  ))}
+                </select>
+                {selectedSourceUrl && selectedSource !== "all" && (
+                  <a
+                    href={selectedSourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate font-mono text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                  >
+                    {selectedSourceUrl}
+                  </a>
+                )}
+              </div>
+            )}
 
-          {resultsReady &&
-            rawUrls.length === 0 &&
-            selectedSource !== "all" &&
-            selectedSourceMeta?.error && (
-              <p className="text-sm text-red-600 text-center">
-                Could not load this child sitemap.
+            {(expandResult.truncated ||
+              expandResult.childSitemapsFailed.length > 0 ||
+              selectedSourceMeta?.error) && (
+              <p className="border-t px-4 py-2.5 text-xs text-warning">
+                {selectedSourceMeta?.error
+                  ? `This child sitemap failed: ${selectedSourceMeta.error}`
+                  : [
+                      expandResult.childSitemapsFailed.length > 0
+                        ? `${expandResult.childSitemapsFailed.length} child sitemap(s) failed`
+                        : null,
+                      expandResult.truncated ? "truncated at limit" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
               </p>
             )}
+          </div>
+
+          <div className="mt-10">
+            <SitemapValidationPanel validation={expandResult.validation} />
+          </div>
+
+          {resultsReady && (
+            <div className="mt-10">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-subhead font-semibold">URLs</h2>
+                <div
+                  role="group"
+                  aria-label="View mode"
+                  className="inline-flex rounded-md border p-0.5"
+                >
+                  {(
+                    [
+                      { id: "tree", label: "Tree", Icon: List },
+                      { id: "table", label: "Table", Icon: Rows3 },
+                    ] as const
+                  ).map(({ id, label, Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setView(id)}
+                      aria-pressed={view === id}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        view === id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" aria-hidden />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                {view === "tree" ? (
+                  <SitemapToJSX
+                    sitemap={sitemapWithDeepRoutes}
+                    baseUrl={baseUrl}
+                  />
+                ) : (
+                  <SitemapTable entries={entries} baseUrl={baseUrl} />
+                )}
+              </div>
+            </div>
+          )}
         </FadeIn>
       )}
-    </div>
+
+      {!loading &&
+        expandResult &&
+        rawUrls.length === 0 &&
+        selectedSource !== "all" && (
+          <p className="mx-auto mt-8 max-w-3xl text-sm text-muted-foreground">
+            {selectedSourceMeta?.error
+              ? "Could not load this child sitemap."
+              : "This child sitemap declared no URLs."}
+          </p>
+        )}
+    </Container>
   )
 }
 

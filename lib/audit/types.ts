@@ -1,6 +1,6 @@
 export type CheckStatus = "pass" | "warn" | "fail"
 
-export type AuditCategoryId = "onpage" | "crawl" | "trust"
+export type AuditCategoryId = "onpage" | "crawl" | "trust" | "ai"
 
 export type AuditCheck = {
   id: string
@@ -26,6 +26,10 @@ export type CategoryScore = {
 export type AuditReport = {
   inputUrl: string
   origin: string
+  /** The exact URL that was audited for page-level checks */
+  pageUrl: string
+  /** True when the audited URL is the site root */
+  isHomepage: boolean
   finalUrl: string
   domain: string
   auditedAt: string

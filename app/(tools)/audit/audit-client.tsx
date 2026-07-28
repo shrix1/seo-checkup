@@ -1,27 +1,32 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+import Container from "@/components/container"
 import { FadeIn } from "@/components/motion"
+import ScoreRing, { scoreBand } from "@/components/score-ring"
+import { StatusChip, StatusCount, StatusDot } from "@/components/status"
+import ToolSearchForm, {
+  ToolError,
+  ToolExample,
+} from "@/components/tool-search-form"
+import { Button } from "@/components/ui/button"
+import Disclosure from "@/components/ui/disclosure"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AHREFS_DR_ATTRIBUTION } from "@/lib/ahrefs-dr"
-import type { AuditCheck, AuditReport, CheckStatus } from "@/lib/audit/types"
+import type { AuditCheck, AuditReport } from "@/lib/audit/types"
 import { cn } from "@/lib/utils"
 import {
   AlertTriangle,
+  Bot,
   Check,
-  CheckCircle2,
-  ChevronDown,
   Copy,
   ExternalLink,
   FileSearch,
   Globe2,
-  Loader,
   RefreshCw,
   Shield,
   Sparkles,
   TrendingUp,
-  XCircle,
+  Wrench,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -38,41 +43,11 @@ function initialQuery(query: string) {
   }
 }
 
-function statusColor(status: CheckStatus) {
-  if (status === "pass") return "text-emerald-600 dark:text-emerald-400"
-  if (status === "warn") return "text-amber-600 dark:text-amber-400"
-  return "text-red-600 dark:text-red-400"
-}
-
-function StatusIcon({ status }: { status: CheckStatus }) {
-  if (status === "pass") {
-    return (
-      <CheckCircle2
-        className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5"
-        aria-hidden
-      />
-    )
-  }
-  if (status === "warn") {
-    return (
-      <AlertTriangle
-        className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5"
-        aria-hidden
-      />
-    )
-  }
-  return (
-    <XCircle
-      className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5"
-      aria-hidden
-    />
-  )
-}
-
 const categoryIcon = {
   onpage: FileSearch,
   crawl: Globe2,
   trust: Shield,
+  ai: Bot,
 } as const
 
 function reportToMarkdown(report: AuditReport): string {
@@ -80,7 +55,8 @@ function reportToMarkdown(report: AuditReport): string {
     `# SEO Audit — ${report.domain}`,
     `Score: ${report.score}/100`,
     `Audited: ${report.auditedAt}`,
-    `URL: ${report.finalUrl}`,
+    `URL audited: ${report.pageUrl}`,
+    `Final URL: ${report.finalUrl}`,
     typeof report.domainRating === "number"
       ? `Domain Rating: ${Math.round(report.domainRating)} (${AHREFS_DR_ATTRIBUTION.text})`
       : null,
@@ -129,7 +105,8 @@ function reportToAiPrompt(report: AuditReport): string {
     "",
     "## Site",
     `- Domain: ${report.domain}`,
-    `- URL audited: ${report.finalUrl}`,
+    `- URL audited: ${report.pageUrl}`,
+    `- Final URL after redirects: ${report.finalUrl}`,
     drLine,
     `- Overall audit score: ${report.score}/100`,
     `- Checks: ${report.fail} fail, ${report.warn} warn, ${report.pass} pass`,
@@ -152,42 +129,57 @@ function reportToAiPrompt(report: AuditReport): string {
 
 function CheckRow({ check }: { check: AuditCheck }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start gap-2 py-3.5 border-b border-border/60 last:border-0">
-      <div className="flex items-start gap-2.5 min-w-0 flex-1">
-        <StatusIcon status={check.status} />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-medium text-sm">{check.label}</span>
-            <span
-              className={cn(
-                "text-xs font-mono uppercase tracking-wide",
-                statusColor(check.status)
-              )}
+    <div className="flex gap-3 py-3.5">
+      <StatusDot status={check.status} className="mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span className="text-sm font-medium">{check.label}</span>
+          {check.deepLink && (
+            <Link
+              href={check.deepLink}
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
             >
-              {check.status}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground mt-0.5">{check.detail}</p>
-          {check.value && (
-            <p className="text-xs font-mono mt-1 break-all text-foreground/80">
-              {check.value}
-            </p>
-          )}
-          {check.status !== "pass" && (
-            <p className="text-xs mt-1.5 text-muted-foreground">
-              Fix: {check.fixHint}
-            </p>
+              Open tool <ExternalLink className="h-3 w-3" aria-hidden />
+            </Link>
           )}
         </div>
+        <p className="mt-0.5 text-sm text-muted-foreground">{check.detail}</p>
+        {check.value && (
+          <p className="mt-2 break-all rounded bg-surface-2 px-2 py-1 font-mono text-xs text-foreground/80">
+            {check.value}
+          </p>
+        )}
+        {check.status !== "pass" && (
+          <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Wrench className="mt-px h-3 w-3 shrink-0" aria-hidden />
+            <span>{check.fixHint}</span>
+          </p>
+        )}
       </div>
-      {check.deepLink && (
-        <Link
-          href={check.deepLink}
-          className="text-xs underline underline-offset-2 shrink-0 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-        >
-          Open tool <ExternalLink className="h-3 w-3" />
-        </Link>
-      )}
+    </div>
+  )
+}
+
+function ReportSkeleton() {
+  return (
+    <div className="mt-10 space-y-8">
+      <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+        <Skeleton className="h-[214px] w-full rounded-xl sm:w-[220px]" />
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-28" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-12 w-full rounded-lg" />
+        <Skeleton className="h-12 w-full rounded-lg" />
+        <Skeleton className="h-12 w-full rounded-lg" />
+      </div>
+      <span className="sr-only">Running audit</span>
     </div>
   )
 }
@@ -201,11 +193,6 @@ export default function AuditClient({ query }: { query: string }) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [promptCopied, setPromptCopied] = useState(false)
-  const [openCats, setOpenCats] = useState<Record<string, boolean>>({
-    onpage: true,
-    crawl: true,
-    trust: true,
-  })
   const hasFetched = useRef(false)
 
   const run = useCallback(async (url: string) => {
@@ -271,79 +258,67 @@ export default function AuditClient({ query }: { query: string }) {
     setTimeout(() => setPromptCopied(false), 2000)
   }
 
+  const band = report ? scoreBand(report.score) : null
+
   return (
-    <div className="w-full max-w-3xl mx-auto mt-8">
-      <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2">
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="https://example.com"
-          className="font-mono"
-          aria-label="Site URL to audit"
-        />
-        <Button type="submit" disabled={loading} className="shrink-0">
-          {loading ? (
-            <>
-              <Loader className="h-4 w-4 animate-spin mr-2" />
-              Auditing…
-            </>
-          ) : (
-            "Run free audit"
-          )}
-        </Button>
-      </form>
-      <p className="text-xs text-muted-foreground mt-2 font-mono">
-        Try{" "}
-        <button
-          type="button"
-          className="underline underline-offset-2"
-          onClick={() => {
-            setValue(DEFAULT_SITE)
-            if (DEFAULT_SITE === initial) {
-              void run(DEFAULT_SITE)
-              return
-            }
-            router.push(`/audit?q=${encodeURIComponent(DEFAULT_SITE)}`)
-          }}
-        >
-          {DEFAULT_SITE}
-        </button>
-      </p>
+    <Container width="reading" className="mt-10">
+      <ToolSearchForm
+        value={value}
+        onChange={setValue}
+        onSubmit={onSubmit}
+        ariaLabel="Site URL to audit"
+        loading={loading}
+        buttonLabel="Run free audit"
+        loadingLabel="Auditing…"
+      />
+      <ToolExample
+        url={DEFAULT_SITE}
+        onPick={() => {
+          setValue(DEFAULT_SITE)
+          if (DEFAULT_SITE === initial) {
+            void run(DEFAULT_SITE)
+            return
+          }
+          router.push(`/audit?q=${encodeURIComponent(DEFAULT_SITE)}`)
+        }}
+      />
 
-      {error && (
-        <p className="mt-6 text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
+      {error && <ToolError>{error}</ToolError>}
 
-      {loading && (
-        <div className="mt-10 space-y-4">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      )}
+      {loading && <ReportSkeleton />}
 
       {report && !loading && (
         <FadeIn className="mt-10 space-y-10">
-          <header className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <header className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="font-mono text-sm font-medium truncate">
-                  {report.domain}
+                <p className="truncate font-mono text-sm font-medium">
+                  {report.pageUrl}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {report.isHomepage
+                    ? "Homepage audit"
+                    : "Page-level audit · site checks still run against the origin"}
+                  {" · "}
                   {new Date(report.auditedAt).toLocaleString()}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 shrink-0">
-                <Button type="button" variant="outline" size="sm" onClick={copyReport}>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={copyReport}
+                >
                   {copied ? (
                     <>
-                      <Check className="h-3.5 w-3.5 mr-1.5" /> Copied
+                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copied
                     </>
                   ) : (
                     <>
-                      <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy report
+                      <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Copy report
                     </>
                   )}
                 </Button>
@@ -355,11 +330,13 @@ export default function AuditClient({ query }: { query: string }) {
                 >
                   {promptCopied ? (
                     <>
-                      <Check className="h-3.5 w-3.5 mr-1.5" /> Prompt copied
+                      <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Prompt copied
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Fix with AI
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      Fix with AI
                     </>
                   )}
                 </Button>
@@ -369,84 +346,75 @@ export default function AuditClient({ query }: { query: string }) {
                   size="sm"
                   onClick={() => void run(value)}
                 >
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                   Re-run
                 </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border bg-muted/20 px-5 py-6 sm:px-6 sm:py-8">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" aria-hidden />
-                  <span className="text-xs font-mono uppercase tracking-wider">
-                    Domain Rating
-                  </span>
+            <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+              {/* Audit score — the primary metric */}
+              <div className="flex flex-col items-center rounded-xl border bg-surface-1 px-6 py-6 sm:w-[220px]">
+                <span className="text-label font-medium uppercase text-muted-foreground">
+                  Audit score
+                </span>
+                <div className="mt-4">
+                  <ScoreRing value={report.score} size={132} />
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-7xl sm:text-8xl font-bold font-mono tracking-tighter leading-none">
-                    {typeof report.domainRating === "number"
-                      ? Math.round(report.domainRating)
-                      : "—"}
+                {band && (
+                  <span className={cn("mt-3 text-sm font-medium", band.text)}>
+                    {band.label}
                   </span>
-                  <span className="text-muted-foreground text-sm font-mono">
-                    / 100
-                  </span>
-                </div>
-                {typeof report.domainRating !== "number" && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {report.domainRatingError || "Unavailable"}
-                  </p>
                 )}
-                <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <Link
-                    href={`/domain-rating?q=${encodeURIComponent(report.domain)}`}
-                    className="inline-flex items-center gap-1 hover:text-foreground underline underline-offset-2"
-                  >
-                    Open DR tool <ExternalLink className="h-3 w-3" />
-                  </Link>
-                  <span className="opacity-60" aria-hidden>
-                    ·
-                  </span>
-                  <a
-                    href={AHREFS_DR_ATTRIBUTION.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="opacity-60 hover:opacity-100 hover:text-foreground"
-                  >
-                    Ahrefs
-                  </a>
-                </div>
               </div>
 
-              <div className="rounded-xl border px-5 py-6 sm:px-6 sm:py-8">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="h-4 w-4" aria-hidden />
-                  <span className="text-xs font-mono uppercase tracking-wider">
-                    Audit score
-                  </span>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap gap-2">
+                  <StatusChip status="fail" count={report.fail} />
+                  <StatusChip status="warn" count={report.warn} />
+                  <StatusChip status="pass" count={report.pass} />
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-5xl sm:text-6xl font-bold font-mono tracking-tighter leading-none">
-                    {report.score}
-                  </span>
-                  <span className="text-muted-foreground text-sm font-mono">
-                    / 100
-                  </span>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-3 text-xs font-mono">
-                  <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400">
-                    <XCircle className="h-3.5 w-3.5" aria-hidden />
-                    {report.fail} fail
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
-                    {report.warn} warn
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                    {report.pass} pass
-                  </span>
+
+                {/* Domain Rating — secondary */}
+                <div className="flex flex-1 flex-col justify-center rounded-xl border px-5 py-5">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <TrendingUp className="h-4 w-4" aria-hidden />
+                    <span className="text-label font-medium uppercase">
+                      Domain Rating
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="font-mono text-[2.75rem] font-semibold leading-none tracking-tight tabular">
+                      {typeof report.domainRating === "number"
+                        ? Math.round(report.domainRating)
+                        : "—"}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/ 100</span>
+                  </div>
+                  {typeof report.domainRating !== "number" && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {report.domainRatingError || "Unavailable"}
+                    </p>
+                  )}
+                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <Link
+                      href={`/domain-rating?q=${encodeURIComponent(report.domain)}`}
+                      className="inline-flex items-center gap-1 underline underline-offset-2 transition-colors hover:text-foreground"
+                    >
+                      Open DR tool <ExternalLink className="h-3 w-3" aria-hidden />
+                    </Link>
+                    <span className="opacity-60" aria-hidden>
+                      ·
+                    </span>
+                    <a
+                      href={AHREFS_DR_ATTRIBUTION.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 opacity-70 transition-opacity hover:opacity-100"
+                    >
+                      {AHREFS_DR_ATTRIBUTION.text}
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -455,13 +423,13 @@ export default function AuditClient({ query }: { query: string }) {
           {report.fixFirst.length > 0 && (
             <section>
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-lg font-semibold">Fix first</h3>
+                <AlertTriangle className="h-4 w-4 text-warning" aria-hidden />
+                <h2 className="text-subhead font-semibold">Fix first</h2>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Highest-impact issues, ordered by severity.
               </p>
-              <div className="mt-4 rounded-lg border px-4">
+              <div className="mt-4 divide-y rounded-lg border px-4">
                 {report.fixFirst.map((check) => (
                   <CheckRow key={check.id} check={check} />
                 ))}
@@ -469,65 +437,57 @@ export default function AuditClient({ query }: { query: string }) {
             </section>
           )}
 
-          <section className="space-y-4">
-            <h3 className="text-lg font-semibold">All checks</h3>
+          <section className="space-y-3">
+            <h2 className="text-subhead font-semibold">All checks</h2>
             {report.categories.map((cat) => {
-              const open = openCats[cat.id] ?? true
               const CatIcon = categoryIcon[cat.id]
+              const catBand = scoreBand(cat.score)
               return (
-                <div key={cat.id} className="rounded-lg border overflow-hidden">
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
-                    onClick={() =>
-                      setOpenCats((prev) => ({ ...prev, [cat.id]: !open }))
-                    }
-                    aria-expanded={open}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                <Disclosure
+                  key={cat.id}
+                  defaultOpen
+                  contentClassName="divide-y"
+                  trigger={
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <CatIcon
                         className="h-4 w-4 shrink-0 text-muted-foreground"
                         aria-hidden
                       />
                       <span className="font-medium">{cat.label}</span>
-                      <span className="font-mono text-sm text-muted-foreground">
-                        {cat.score}/100
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="h-1 w-12 overflow-hidden rounded-full bg-border"
+                          aria-hidden
+                        >
+                          <span
+                            className={cn(
+                              "block h-full rounded-full",
+                              catBand.bg
+                            )}
+                            style={{ width: `${cat.score}%` }}
+                          />
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground tabular">
+                          {cat.score}
+                        </span>
                       </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground">
-                      <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
-                        <XCircle className="h-3 w-3" />
-                        {cat.fail}
+                      <span className="ml-auto flex items-center gap-2.5">
+                        <StatusCount status="fail" count={cat.fail} />
+                        <StatusCount status="warn" count={cat.warn} />
+                        <StatusCount status="pass" count={cat.pass} />
                       </span>
-                      <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3" />
-                        {cat.warn}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {cat.pass}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 transition-transform",
-                          open && "rotate-180"
-                        )}
-                      />
-                    </div>
-                  </button>
-                  {open && (
-                    <div className="px-4 border-t bg-muted/20">
-                      {cat.checks.map((check) => (
-                        <CheckRow key={check.id} check={check} />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    </span>
+                  }
+                >
+                  {cat.checks.map((check) => (
+                    <CheckRow key={check.id} check={check} />
+                  ))}
+                </Disclosure>
               )
             })}
           </section>
         </FadeIn>
       )}
-    </div>
+    </Container>
   )
 }

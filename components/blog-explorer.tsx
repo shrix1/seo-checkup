@@ -1,22 +1,13 @@
 "use client"
 
+import Container from "@/components/container"
+import { Input } from "@/components/ui/input"
 import { getBlogPosts } from "@/lib/blog-metadata"
-import { features } from "@/lib/site"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
 const posts = getBlogPosts()
-
-const toolLinks = [
-  features.audit,
-  features.domainRating,
-  features.sitemap,
-  features.metadata,
-  features.robots,
-].map((f) => ({
-  href: f.landingPath,
-  label: f.landingLabel,
-}))
 
 export default function BlogExplorer() {
   const [query, setQuery] = useState("")
@@ -41,92 +32,92 @@ export default function BlogExplorer() {
   }, [query, category])
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
-      <h1 className="text-4xl sm:text-5xl font-bold font-mono tracking-tight">
-        Blog
-      </h1>
-      <p className="mt-3 text-muted-foreground max-w-xl">
-        Practical guides for sitemaps, meta tags, robots.txt, Domain Rating, and
-        free site audits.
-      </p>
+    <>
+      <section className="border-b">
+        <Container width="page" className="py-14 md:py-20">
+          <h1 className="text-title font-semibold sm:text-display">Blog</h1>
+          <p className="mt-3 max-w-xl text-subhead text-muted-foreground">
+            Practical guides for sitemaps, meta tags, robots.txt, Domain Rating,
+            and free site audits.
+          </p>
+        </Container>
+      </section>
 
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search posts…"
-          className="flex h-9 w-full sm:max-w-xs rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          aria-label="Search blog posts"
-        />
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setCategory(cat)}
-              className={
-                category === cat
-                  ? "text-xs font-medium px-2.5 py-1 rounded-md bg-foreground text-background"
-                  : "text-xs font-medium px-2.5 py-1 rounded-md border hover:bg-accent"
-              }
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map((post) => (
-          <Link
-            key={post.slug}
-            href={`/blog/${post.slug}`}
-            className="group border rounded-xl overflow-hidden hover:shadow-md transition-shadow bg-background"
+      <Container width="page" className="py-10 md:py-14">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search posts…"
+            aria-label="Search blog posts"
+            className="sm:max-w-xs"
+          />
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter by category"
           >
-            <div
-              className="aspect-[16/10] bg-muted bg-cover bg-center"
-              style={{ backgroundImage: `url(${post.coverImage})` }}
-            />
-            <div className="p-4">
-              <p className="text-xs font-mono text-muted-foreground">
-                {post.category} · {post.date}
-              </p>
-              <h2 className="mt-2 font-semibold group-hover:underline underline-offset-2 line-clamp-2">
-                {post.title}
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                {post.description}
-              </p>
-              <p className="mt-3 text-xs text-muted-foreground">{post.readTime}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+            {categories.map((cat) => {
+              const active = category === cat
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  aria-pressed={active}
+                  className={cn(
+                    "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:border-border-strong hover:text-foreground"
+                  )}
+                >
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
-      {filtered.length === 0 && (
-        <p className="mt-10 text-sm text-muted-foreground">No posts matched.</p>
-      )}
-
-      <nav
-        aria-label="SEO tools"
-        className="mt-16 pt-8 border-t text-sm text-muted-foreground"
-      >
-        <p className="font-medium text-foreground">Free tools</p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-          <Link href="/" className="underline underline-offset-2 hover:text-foreground">
-            Home
-          </Link>
-          {toolLinks.map((item) => (
+        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((post) => (
             <Link
-              key={item.href}
-              href={item.href}
-              className="underline underline-offset-2 hover:text-foreground"
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="group flex flex-col overflow-hidden rounded-lg border bg-background transition-colors duration-[var(--duration-normal)] ease-[var(--ease-out)] hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              {item.label}
+              <div
+                className="aspect-[16/10] border-b bg-surface-2 bg-cover bg-center"
+                style={{ backgroundImage: `url(${post.coverImage})` }}
+                role="presentation"
+              />
+              <div className="flex flex-1 flex-col p-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">
+                    {post.category}
+                  </span>
+                  <span>{post.date}</span>
+                </div>
+                <h2 className="mt-3 line-clamp-2 font-semibold underline-offset-2 group-hover:underline">
+                  {post.title}
+                </h2>
+                <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">
+                  {post.description}
+                </p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {post.readTime}
+                </p>
+              </div>
             </Link>
           ))}
         </div>
-      </nav>
-    </div>
+
+        {filtered.length === 0 && (
+          <p className="mt-10 text-body text-muted-foreground">
+            No posts matched “{query}”.
+          </p>
+        )}
+      </Container>
+    </>
   )
 }

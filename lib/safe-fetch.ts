@@ -10,6 +10,8 @@ export type SafeFetchResult = {
   finalUrl: string
   headers: Headers
   body: Buffer
+  /** Each hop taken, as `{ from, status, to }` — empty when served directly */
+  redirects: { from: string; status: number; to: string }[]
   error?: string
 }
 
@@ -54,6 +56,7 @@ export async function safeFetch(
   const timeoutMs = init?.timeoutMs ?? FETCH_TIMEOUT_MS
   const maxBytes = init?.maxBytes ?? MAX_BODY_BYTES
   let current = input
+  const redirects: { from: string; status: number; to: string }[] = []
 
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
@@ -85,10 +88,13 @@ export async function safeFetch(
             finalUrl: url.href,
             headers: res.headers,
             body: Buffer.alloc(0),
+            redirects,
             error: "Redirect missing Location",
           }
         }
-        current = new URL(location, url).href
+        const next = new URL(location, url).href
+        redirects.push({ from: url.href, status: res.status, to: next })
+        current = next
         if (hop === MAX_REDIRECTS) {
           return {
             ok: false,
@@ -96,6 +102,7 @@ export async function safeFetch(
             finalUrl: current,
             headers: res.headers,
             body: Buffer.alloc(0),
+            redirects,
             error: "Too many redirects",
           }
         }
@@ -109,6 +116,7 @@ export async function safeFetch(
         finalUrl: url.href,
         headers: res.headers,
         body,
+        redirects,
         error: res.ok ? undefined : `HTTP ${res.status}`,
       }
     }
@@ -119,6 +127,7 @@ export async function safeFetch(
       finalUrl: current,
       headers: new Headers(),
       body: Buffer.alloc(0),
+      redirects,
       error: "Too many redirects",
     }
   } catch (err) {
@@ -128,6 +137,7 @@ export async function safeFetch(
       finalUrl: current,
       headers: new Headers(),
       body: Buffer.alloc(0),
+      redirects,
       error: err instanceof Error ? err.message : "Fetch failed",
     }
   }

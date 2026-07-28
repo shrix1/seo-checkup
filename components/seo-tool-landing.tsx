@@ -1,7 +1,10 @@
+import AuditForm from "@/components/audit-form"
+import Container from "@/components/container"
 import JsonLd from "@/components/json-ld"
-import SeoLandingCta from "@/components/seo-landing-cta"
-import { Button } from "@/components/ui/button"
+import { FadeIn } from "@/components/motion"
+import Disclosure from "@/components/ui/disclosure"
 import { absoluteUrl } from "@/lib/site"
+import { ArrowRight, Check } from "lucide-react"
 import Link from "next/link"
 
 export type SeoLandingFaq = {
@@ -76,88 +79,109 @@ export default function SeoToolLanding({
   }
 
   return (
-    <section className="relative flex justify-center flex-col items-center min-h-[83vh]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-background
-          bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)]
-          bg-[size:6rem_4rem]
-          [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]"
-      />
+    <>
+      {/* Hero */}
+      <section className="border-b">
+        <Container width="reading" className="py-16 md:py-20">
+          <FadeIn>
+            <p className="text-label font-medium uppercase text-muted-foreground">
+              Free tool
+            </p>
+            <h1 className="mt-3 text-title font-semibold sm:text-display">
+              {h1}
+            </h1>
+            <p className="mt-4 max-w-xl text-subhead text-muted-foreground">
+              {pitch}
+            </p>
 
-      <main className="w-full max-w-2xl px-4 py-16 md:py-24">
-        <p className="font-mono text-sm text-muted-foreground">SeoCheckup</p>
-        <h1 className="mt-2 text-4xl sm:text-5xl font-bold tracking-tight font-mono">
-          {h1}
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-muted-foreground">
-          {pitch}
-        </p>
+            <div className="mt-8 max-w-xl">
+              <AuditForm
+                toolPath={toolPath}
+                defaultValue={defaultDemoUrl}
+                placeholder={inputPlaceholder}
+                buttonLabel={ctaLabel}
+              />
+            </div>
 
-        <div className="mt-8 space-y-3">
-          <SeoLandingCta
-            toolPath={toolPath}
-            defaultDemoUrl={defaultDemoUrl}
-            inputPlaceholder={inputPlaceholder}
-            buttonLabel={ctaLabel}
-          />
-          <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg" variant="outline">
-              <Link href={blogHref}>{blogLabel}</Link>
-            </Button>
-          </div>
-        </div>
+            <p className="mt-4 text-sm">
+              <Link
+                href={blogHref}
+                className="inline-flex items-center gap-1.5 text-link underline underline-offset-2"
+              >
+                {blogLabel}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </p>
+          </FadeIn>
+        </Container>
+      </section>
 
-        <div className="mt-14">
-          <h2 className="text-lg font-semibold">What you get</h2>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground list-disc pl-5">
+      {/* What you get */}
+      <section className="border-b">
+        <Container width="reading" className="py-14 md:py-16">
+          <h2 className="text-heading font-semibold">What you get</h2>
+          <ul className="mt-5 divide-y rounded-lg border">
             {benefits.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item} className="flex items-start gap-3 px-4 py-3.5">
+                <Check
+                  className="mt-0.5 h-4 w-4 shrink-0 text-success"
+                  aria-hidden
+                />
+                <span className="text-body">{item}</span>
+              </li>
             ))}
           </ul>
-        </div>
+        </Container>
+      </section>
 
-        <div className="mt-14">
-          <h2 className="text-lg font-semibold">FAQ</h2>
-          <dl className="mt-4 space-y-5">
-            {faqs.map((faq) => (
-              <div key={faq.question}>
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="mt-1 text-sm text-muted-foreground">
+      {/* FAQ */}
+      <section className="border-b">
+        <Container width="reading" className="py-14 md:py-16">
+          <h2 className="text-heading font-semibold">
+            Frequently asked questions
+          </h2>
+          <div className="mt-5 space-y-2">
+            {faqs.map((faq, i) => (
+              <Disclosure
+                key={faq.question}
+                defaultOpen={i === 0}
+                trigger={
+                  <span className="text-body font-medium">{faq.question}</span>
+                }
+              >
+                <p className="py-3.5 text-body text-muted-foreground">
                   {faq.answer}
-                </dd>
-              </div>
+                </p>
+              </Disclosure>
             ))}
-          </dl>
-        </div>
+          </div>
+        </Container>
+      </section>
 
-        <nav
-          aria-label="Related links"
-          className="mt-14 pt-8 border-t flex flex-wrap gap-x-4 gap-y-2 text-sm"
-        >
-          <Link href="/" className="underline underline-offset-2">
-            Home
-          </Link>
-          <Link
-            href={blogHref}
-            className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
-          >
-            {blogLabel}
-          </Link>
-          {related.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </main>
+      {/* Related */}
+      <section>
+        <Container width="reading" className="py-14 md:py-16">
+          <h2 className="text-heading font-semibold">Related tools</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {related.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group flex items-center justify-between gap-3 rounded-lg border px-4 py-3.5 text-body transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:border-border-strong hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="font-medium">{item.label}</span>
+                <ArrowRight
+                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)] group-hover:translate-x-0.5 group-hover:text-primary"
+                  aria-hidden
+                />
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </section>
 
       <JsonLd data={faqJsonLd} />
       <JsonLd data={appJsonLd} />
-    </section>
+    </>
   )
 }

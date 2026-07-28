@@ -2,7 +2,7 @@ import React from "react"
 import { FileImage } from "lucide-react"
 import type { Metadata } from "next"
 import { constructMetadata } from "@/lib/utils"
-import { FadeIn } from "@/components/motion"
+import ToolShell from "@/components/tool-shell"
 import { safeDecodeURIComponent } from "@/lib/safe-decode"
 import InputFieldMetadata from "./input-field"
 import JsonLd from "@/components/json-ld"
@@ -44,24 +44,14 @@ export default async function MetaData({
   const query = safeDecodeURIComponent(q)
 
   return (
-    <div className="min-h-screen max-h-full flex items-center flex-col pb-10 px-4 md:px-0">
+    <ToolShell
+      icon={FileImage}
+      title="Meta Tags Checker"
+      description="Preview title, description, and Open Graph cards before you publish."
+    >
       <JsonLd data={appJsonLd} />
-      <FadeIn>
-        <section className="flex justify-center flex-col items-center gap-4 mt-3">
-          <div
-            className="w-11 h-11 flex justify-center items-center rounded-lg
-         bg-gradient-to-br from-secondary via-black/20 to-secondary/20 dark:from-primary/30 dark:via-primary/50 dark:to-primary text-black backdrop-blur-md"
-          >
-            <FileImage />
-          </div>
-          <h2 className="text-center text-2xl font-semibold">Meta Tags Checker</h2>
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            Preview title, description, and Open Graph cards before you publish.
-          </p>
-        </section>
-      </FadeIn>
       <InputFieldMetadata key={query || "default"} query={query} />
       <ToolRelatedLinks feature="metadata" />
-    </div>
+    </ToolShell>
   )
 }

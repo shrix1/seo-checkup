@@ -4,28 +4,28 @@ import Link from "next/link"
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     h1: (props) => (
-      <h1
-        className="text-3xl sm:text-4xl font-bold tracking-tight font-mono mt-0 mb-6"
-        {...props}
-      />
+      <h1 className="mb-6 mt-0 text-title font-semibold sm:text-display" {...props} />
     ),
     h2: (props) => (
-      <h2
-        className="text-xl sm:text-2xl font-semibold tracking-tight mt-10 mb-3"
+      <h2 className="mb-3 mt-10 text-heading font-semibold" {...props} />
+    ),
+    h3: (props) => (
+      <h3 className="mb-2 mt-8 text-subhead font-semibold" {...props} />
+    ),
+    p: (props) => (
+      <p className="mb-4 leading-relaxed text-muted-foreground" {...props} />
+    ),
+    ul: (props) => (
+      <ul
+        className="mb-4 list-disc space-y-2 pl-5 text-muted-foreground"
         {...props}
       />
     ),
-    h3: (props) => (
-      <h3 className="text-lg font-semibold mt-8 mb-2" {...props} />
-    ),
-    p: (props) => (
-      <p className="text-muted-foreground leading-relaxed mb-4" {...props} />
-    ),
-    ul: (props) => (
-      <ul className="list-disc pl-5 space-y-2 mb-4 text-muted-foreground" {...props} />
-    ),
     ol: (props) => (
-      <ol className="list-decimal pl-5 space-y-2 mb-4 text-muted-foreground" {...props} />
+      <ol
+        className="mb-4 list-decimal space-y-2 pl-5 text-muted-foreground"
+        {...props}
+      />
     ),
     li: (props) => <li className="leading-relaxed" {...props} />,
     a: ({ href, ...props }) => {
@@ -33,7 +33,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         return (
           <Link
             href={href}
-            className="underline underline-offset-2 text-foreground"
+            className="text-link underline underline-offset-2"
             {...props}
           />
         )
@@ -41,7 +41,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       return (
         <a
           href={href}
-          className="underline underline-offset-2 text-foreground"
+          className="text-link underline underline-offset-2"
           target="_blank"
           rel="noopener noreferrer"
           {...props}
@@ -50,13 +50,13 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     },
     blockquote: (props) => (
       <blockquote
-        className="border-l-2 border-foreground/30 pl-4 italic text-muted-foreground my-6"
+        className="my-6 border-l-2 border-border-strong pl-4 italic text-muted-foreground"
         {...props}
       />
     ),
     code: (props) => (
       <code
-        className="font-mono text-sm bg-muted px-1.5 py-0.5 rounded"
+        className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-sm"
         {...props}
       />
     ),

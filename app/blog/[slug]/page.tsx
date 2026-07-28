@@ -1,3 +1,4 @@
+import Container from "@/components/container"
 import JsonLd from "@/components/json-ld"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,6 +10,7 @@ import {
 import { SITE_URL, absoluteUrl } from "@/lib/site"
 import { constructMetadata } from "@/lib/utils"
 import type { Metadata } from "next"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { ComponentType } from "react"
@@ -91,69 +93,86 @@ export default async function BlogPostPage({
   }
 
   return (
-    <article className="pb-16">
+    <article className="pb-8">
       <JsonLd data={articleJsonLd} />
-      <div
-        className="w-full h-56 sm:h-72 md:h-80 bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${meta.coverImage})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 -mt-16 relative">
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_240px] gap-10">
-          <div>
-            <p className="text-xs font-mono text-muted-foreground">
-              {meta.category} · {meta.date} · {meta.readTime}
-            </p>
-            <div className="mt-4 prose prose-neutral dark:prose-invert max-w-3xl">
+      <Container width="page" className="pt-8">
+        <Link
+          href="/blog"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          All posts
+        </Link>
+
+        <div className="mt-6 grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">
+                {meta.category}
+              </span>
+              <span>{meta.date}</span>
+              <span aria-hidden>·</span>
+              <span>{meta.readTime}</span>
+            </div>
+
+            <div
+              className="mt-5 aspect-[16/7] w-full max-w-3xl rounded-lg border bg-surface-2 bg-cover bg-center"
+              style={{ backgroundImage: `url(${meta.coverImage})` }}
+              role="presentation"
+            />
+
+            {/* The post's own <h1> comes from the MDX source */}
+            <div className="prose prose-neutral mt-8 max-w-3xl dark:prose-invert">
               <Content />
             </div>
           </div>
 
-          <aside className="xl:sticky xl:top-28 h-fit space-y-4">
-            <div className="border rounded-xl p-4 bg-muted/30">
+          <aside className="h-fit space-y-4 xl:sticky xl:top-28">
+            <div className="rounded-lg border bg-surface-1 p-4">
               <p className="text-sm font-medium">Try the tool</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Run this related SeoCheckup feature free.
               </p>
               <Button asChild className="mt-3 w-full">
-                <Link href={meta.relatedTool.href}>{meta.relatedTool.label}</Link>
+                <Link href={meta.relatedTool.href}>
+                  {meta.relatedTool.label}
+                </Link>
               </Button>
               <Link
                 href={meta.relatedLanding.href}
-                className="mt-3 block text-center text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground"
+                className="mt-3 block text-center text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
               >
                 {meta.relatedLanding.label}
               </Link>
             </div>
-            <Link
-              href="/blog"
-              className="text-sm underline underline-offset-2 text-muted-foreground"
-            >
-              ← All posts
-            </Link>
           </aside>
         </div>
 
         <section className="mt-16 border-t pt-10">
-          <h2 className="text-lg font-semibold">Related posts</h2>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <h2 className="text-heading font-semibold">Related posts</h2>
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
             {related.map((post) => (
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="border rounded-lg p-4 hover:bg-muted/40 transition-colors"
+                className="group flex flex-col rounded-lg border p-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:border-border-strong hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <p className="text-xs font-mono text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {post.category}
-                </p>
-                <p className="mt-1 font-medium text-sm">{post.title}</p>
+                </span>
+                <span className="mt-1.5 flex-1 text-sm font-medium">
+                  {post.title}
+                </span>
+                <ArrowRight
+                  className="mt-3 h-4 w-4 text-muted-foreground transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)] group-hover:translate-x-0.5 group-hover:text-primary"
+                  aria-hidden
+                />
               </Link>
             ))}
           </div>
         </section>
-      </div>
+      </Container>
     </article>
   )
 }

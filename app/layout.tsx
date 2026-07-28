@@ -33,11 +33,9 @@ export default function RootLayout({
         >
           <div className="sticky top-0 z-50">
             <AdBanner />
-            <div className="p-3 w-full bg-background">
-              <Navbar />
-            </div>
+            <Navbar />
           </div>
-          {children}
+          <main>{children}</main>
           <Footer />
         </ThemeProvider>
         <BuyMeCoffee />

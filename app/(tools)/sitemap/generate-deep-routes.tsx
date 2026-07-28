@@ -71,10 +71,17 @@ export const restructureSitemap = (links: string[]) => {
 
   return convertToArray(result)
 }
+
+import { ChevronRight } from "lucide-react"
 import React from "react"
 
 type SitemapItem = string | { [key: string]: string | SitemapItem[] }
 
+/**
+ * Native <details>/<summary> kept deliberately — it is accessible, needs no JS,
+ * and nests arbitrarily. Only the browser-default disclosure triangle and
+ * unstyled rows are replaced.
+ */
 export function SitemapToJSX({
   sitemap,
   baseUrl,
@@ -89,14 +96,13 @@ export function SitemapToJSX({
   ): ReactElement => {
     if (typeof item === "string") {
       return (
-        <li
-          key={item}
-          className="hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg w-fit p-1"
-        >
+        <li key={item}>
           <a
             href={!isLeaf ? baseUrl + item : baseUrl + "/" + key + item}
             target="_blank"
             rel="noopener noreferrer"
+            className="block truncate rounded px-1.5 py-1 font-mono text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title={!isLeaf ? baseUrl + item : baseUrl + "/" + key + item}
           >
             {item}
           </a>
@@ -104,11 +110,21 @@ export function SitemapToJSX({
       )
     } else if (typeof item === "object") {
       const [key, value] = Object.entries(item)[0]
+      const count = Array.isArray(value) ? value.length : 0
       return (
         <li key={key}>
-          <details>
-            <summary>{key}</summary>
-            <ul>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded px-1.5 py-1 text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+              <ChevronRight
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-[var(--duration-fast)] group-open:rotate-90"
+                aria-hidden
+              />
+              <span className="truncate font-mono font-medium">{key}</span>
+              <span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground tabular">
+                {count}
+              </span>
+            </summary>
+            <ul className="ml-[0.6875rem] border-l pl-2">
               {Array.isArray(value) &&
                 value.map((subItem, index) =>
                   React.cloneElement(createListItem(subItem, key, true), {
@@ -124,7 +140,7 @@ export function SitemapToJSX({
   }
 
   return (
-    <ul className="grid grid-cols-1 md:grid-cols-3 gap-y-3 md:gap-x-8 md:gap-y-4">
+    <ul className="grid grid-cols-1 gap-x-6 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-3">
       {sitemap.map((item, index) =>
         React.cloneElement(createListItem(item), { key: index })
       )}
