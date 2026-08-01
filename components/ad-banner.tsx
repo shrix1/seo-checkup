@@ -9,7 +9,7 @@ import Link from "next/link"
 const AdBanner = () => {
   return (
     <Link
-      href="https://supwriter.com/?ref=seo-checkup"
+      href="https://supwriter.com/?utm_source=seo-checkup&utm_medium=banner&utm_campaign=ad-banner"
       target="_blank"
       rel="noopener"
       className="group block w-full bg-foreground text-background"

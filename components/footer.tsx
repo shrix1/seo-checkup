@@ -18,10 +18,10 @@ const linkClass =
 
 /** Sibling products — ref param mirrors the one used by the sponsor banner */
 const moreFromUs = [
-  { label: "Supwriter", href: "https://supwriter.com/?ref=seo-checkup" },
-  { label: "Blazescribe", href: "https://blazescribe.com/?ref=seo-checkup" },
-  { label: "FreeTools", href: "https://freetoolsfr.com/?ref=seo-checkup" },
-  { label: "Ryzio", href: "https://ryzio.app/?ref=seo-checkup" },
+  { label: "Supwriter", href: "https://supwriter.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
+  { label: "Blazescribe", href: "https://blazescribe.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
+  { label: "FreeTools", href: "https://freetoolsfr.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
+  { label: "Ryzio", href: "https://ryzio.app/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
 ]
 
 const Footer = () => {
