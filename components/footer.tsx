@@ -21,6 +21,7 @@ const moreFromUs = [
   { label: "Supwriter", href: "https://supwriter.com/?ref=seo-checkup" },
   { label: "Blazescribe", href: "https://blazescribe.com/?ref=seo-checkup" },
   { label: "FreeTools", href: "https://freetoolsfr.com/?ref=seo-checkup" },
+  { label: "Ryzio", href: "https://ryzio.app/?ref=seo-checkup" },
 ]
 
 const Footer = () => {
