@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-const DEFAULT_SITE = "vercel.com"
+const DEFAULT_SITE = "shrix1.com"
 
 type Strategy = "mobile" | "desktop"
 

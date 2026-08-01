@@ -19,7 +19,7 @@ export default function CoreWebVitalsLandingPage() {
       h1="Free Core Web Vitals Checker"
       pitch="LCP, INP and CLS for any URL. We show real Chrome user data when it exists and say plainly when we are falling back to a lab simulation — because the two disagree, and only one is a ranking signal."
       toolPath={feature.toolPath}
-      defaultDemoUrl="vercel.com"
+      defaultDemoUrl="shrix1.com"
       inputPlaceholder="https://example.com"
       canonicalPath={feature.landingPath}
       appName={feature.appName}

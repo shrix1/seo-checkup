@@ -131,7 +131,7 @@ export default function DomainRatingClient({ query }: { query: string }) {
         <button
           type="button"
           onClick={() => {
-            const demo = "vercel.com, netlify.com, cloudflare.com"
+            const demo = "shrix1.com, vercel.com, netlify.com"
             setValue(demo)
             router.push(`/domain-rating?q=${encodeURIComponent(demo)}`)
           }}

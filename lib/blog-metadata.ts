@@ -89,7 +89,7 @@ export const blogMetadata = {
     readTime: "6 min read",
     coverImage: "/blog/core-web-vitals.svg",
     relatedTool: {
-      href: "/core-web-vitals?q=vercel.com",
+      href: "/core-web-vitals?q=shrix1.com",
       label: "Check Core Web Vitals",
     },
     relatedLanding: {
