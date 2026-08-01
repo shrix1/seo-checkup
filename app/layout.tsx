@@ -8,6 +8,7 @@ import Footer from "@/components/footer"
 import { constructMetadata } from "@/lib/utils"
 import AdBanner from "@/components/ad-banner"
 import BuyMeCoffee from "@/components/buy-me-coffee"
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = constructMetadata({
   canonical: "/",
@@ -41,6 +42,9 @@ export default function RootLayout({
           <Footer />
         </ThemeProvider>
         <BuyMeCoffee />
+        {/* Production deployment only, so local dev and preview traffic
+            stay out of the numbers. */}
+        {process.env.VERCEL_ENV === "production" && <Analytics />}
       </body>
     </html>
   )

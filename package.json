@@ -21,6 +21,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@upstash/ratelimit": "^2.0.5",
     "@upstash/redis": "^1.34.5",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "framer-motion": "^12.42.2",
