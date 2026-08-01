@@ -159,7 +159,7 @@ const Footer = () => {
           <p>
             Built by{" "}
             <Link
-              href="https://dub.sh/shri"
+              href="https://dub.sh/shri?utm_source=seo-checkup&utm_medium=footer&utm_campaign=built-by"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground underline underline-offset-2"

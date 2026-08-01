@@ -36,7 +36,7 @@ export default function BuyMeCoffee() {
             className="flex items-center gap-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-lg pl-4 pr-2 py-3"
           >
             <a
-              href="https://www.buymeacoffee.com/shrix1"
+              href="https://www.buymeacoffee.com/shrix1?utm_source=seo-checkup&utm_medium=site&utm_campaign=buy-me-coffee"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
@@ -56,7 +56,7 @@ export default function BuyMeCoffee() {
         )}
       </AnimatePresence>
       <a
-        href="https://www.buymeacoffee.com/shrix1"
+        href="https://www.buymeacoffee.com/shrix1?utm_source=seo-checkup&utm_medium=site&utm_campaign=buy-me-coffee"
         target="_blank"
         rel="noopener noreferrer"
         className="bg-primary hover:bg-primary/90 p-3 rounded-full shadow-lg transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:scale-110"
