@@ -22,6 +22,7 @@ const moreFromUs = [
   { label: "Blazescribe", href: "https://blazescribe.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "FreeTools", href: "https://freetoolsfr.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "Ryzio", href: "https://ryzio.app/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
+  { label: "WrapScribe", href: "https://wrapscribe.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
 ]
 
 const Footer = () => {
