@@ -23,6 +23,9 @@ const moreFromUs = [
   { label: "FreeTools", href: "https://freetoolsfr.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "Ryzio", href: "https://ryzio.app/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "WrapScribe", href: "https://wrapscribe.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
+  // Self-link on purpose (the FreeSEOAudit name resolves here) — no utm, so
+  // it never shows up as a fake referral in analytics.
+  { label: "FreeSEOAudit", href: "https://seocheckup.shrix1.com/" },
 ]
 
 const Footer = () => {
