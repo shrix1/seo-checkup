@@ -23,13 +23,27 @@ export async function fetchDomainRating(
     return { domain: "", domainRating: null, error: "Invalid domain" }
   }
 
+  // The free DR endpoint still requires an APIv3 key.
+  const apiKey = process.env.AHREF_API_KEY || process.env.AHREFS_API_KEY
+  if (!apiKey) {
+    return {
+      domain,
+      domainRating: null,
+      error: "Domain rating is not configured",
+    }
+  }
+
   try {
     const url = new URL("https://api.ahrefs.com/v3/public/domain-rating-free")
     url.searchParams.set("target", domain)
+    url.searchParams.set("output", "json")
 
     const res = await fetch(url.toString(), {
       signal: AbortSignal.timeout(15_000),
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
     })
 
     if (!res.ok) {

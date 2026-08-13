@@ -58,9 +58,10 @@ See [`.env.example`](.env.example).
 | `UPSTASH_REDIS_REST_TOKEN` | Production | Rate limiting |
 | `DISCORD_LOGS_ID` | Recommended | Discord webhook ID (server-only usage logs) |
 | `DISCORD_LOGS_TOKEN` | Recommended | Discord webhook token |
+| `AHREF_API_KEY` | Domain Rating | Ahrefs APIv3 key (`/api/domain-rating`, DR signal in the audit) |
 
 If the Upstash variables are unset, rate limiting is disabled and the tools still run — so a fresh clone works locally without an account. Set them before deploying.
 
-Ahrefs Domain Rating needs **no** API key (public free endpoint).
+Ahrefs Domain Rating uses the free `domain-rating-free` endpoint, but it still requires an APIv3 key — generate one under Ahrefs → Account settings → API keys.
 
 ---
