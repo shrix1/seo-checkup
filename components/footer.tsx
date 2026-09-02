@@ -1,4 +1,5 @@
 import Container from "@/components/container"
+import { TinyshelfBadge } from "@/components/tinyshelf-badge"
 import { blogPath, features, type FeatureKey } from "@/lib/site"
 import { Flame } from "lucide-react"
 import Link from "next/link"
@@ -31,7 +32,8 @@ const moreFromUs = [
 const Footer = () => {
   return (
     <footer className="mt-16 border-t">
-      <Container width="page" className="py-12">
+      {/* Extra bottom padding keeps the badge clear of the fixed Buy Me a Coffee button. */}
+      <Container width="page" className="pt-12 pb-20">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="flex items-center gap-2">
@@ -159,7 +161,7 @@ const Footer = () => {
           ))}
         </nav>
 
-        <div className="mt-6 text-sm text-muted-foreground">
+        <div className="mt-6 flex flex-col gap-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
             Built by{" "}
             <Link
@@ -181,6 +183,7 @@ const Footer = () => {
             </Link>
             .
           </p>
+          <TinyshelfBadge />
         </div>
       </Container>
     </footer>
