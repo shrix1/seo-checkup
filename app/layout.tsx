@@ -9,6 +9,7 @@ import { constructMetadata } from "@/lib/utils"
 import AdBanner from "@/components/ad-banner"
 import BuyMeCoffee from "@/components/buy-me-coffee"
 import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script"
 
 export const metadata: Metadata = constructMetadata({
   canonical: "/",
@@ -43,8 +44,19 @@ export default function RootLayout({
         </ThemeProvider>
         <BuyMeCoffee />
         {/* Production deployment only, so local dev and preview traffic
-            stay out of the numbers. */}
-        {process.env.VERCEL_ENV === "production" && <Analytics />}
+            stay out of the numbers. DataBull is our self-hosted analytics
+            (analytics.shrix1.com): traffic sources and route changes. */}
+        {process.env.VERCEL_ENV === "production" && (
+          <>
+            <Analytics />
+            <Script
+              src="https://analytics.shrix1.com/js/script.js"
+              data-website-id="dc_v234qksm86cdi6"
+              data-domain="seocheckup.shrix1.com"
+              strategy="afterInteractive"
+            />
+          </>
+        )}
       </body>
     </html>
   )
