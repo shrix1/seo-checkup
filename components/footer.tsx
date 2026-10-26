@@ -19,6 +19,7 @@ const linkClass =
 
 /** Sibling products — ref param mirrors the one used by the sponsor banner */
 const moreFromUs = [
+  { label: "SuperEbook", href: "https://www.superebook.ai/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "Supwriter", href: "https://supwriter.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "Blazescribe", href: "https://blazescribe.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
   { label: "FreeTools", href: "https://freetoolsfr.com/?utm_source=seo-checkup&utm_medium=footer&utm_campaign=more-from-us" },
